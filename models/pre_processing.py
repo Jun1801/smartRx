@@ -6,6 +6,11 @@ import argparse
 import itertools
 import pandas as pd
 import time
+import pandas as pd
+import numpy as np
+from rdkit import Chem
+from rdkit.Chem import AllChem, DataStructs
+from sklearn.decomposition import PCA
 from rdkit import DataStructs
 from rdkit.Chem import AllChem
 from rdkit import Chem
@@ -152,6 +157,115 @@ def parse_DDI_input_file(input_file: str, output_file: str):
     return
 
 # Các hàm calculate
+
+
+# Đọc phân tử từ file định dạng SMILES, MOL, SDF, ...
+def read_molecule(file_path):
+    ext = os.path.splitext(file_path)[1].lower()
+    
+    if ext == '.smi':
+        with open(file_path, 'r') as f:
+            line = f.readline().strip()
+            return Chem.MolFromSmiles(line.split()[0])
+    elif ext in ['.mol', '.mol2']:
+        return Chem.MolFromMolFile(file_path)
+    elif ext == '.sdf':
+        suppl = Chem.SDMolSupplier(file_path)
+        return suppl[0] if suppl and suppl[0] is not None else None
+    else:
+        return None
+
+# Tính fingerprint (ECFP4) dạng vector nhị phân
+def calculate_fingerprint(mol):
+    return AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
+
+# 1. Tính độ tương đồng giữa tất cả các file trong 2 thư mục
+def calculate_drug_similarity(drug_dir, input_dir, output_file):
+    drug_mols = {}
+    for fname in os.listdir(drug_dir):
+        mol = read_molecule(os.path.join(drug_dir, fname))
+        if mol:
+            drug_mols[fname] = calculate_fingerprint(mol)
+
+    input_mols = {}
+    for fname in os.listdir(input_dir):
+        mol = read_molecule(os.path.join(input_dir, fname))
+        if mol:
+            input_mols[fname] = calculate_fingerprint(mol)
+
+    results = []
+    for drug_name, drug_fp in drug_mols.items():
+        for input_name, input_fp in input_mols.items():
+            sim = DataStructs.TanimotoSimilarity(drug_fp, input_fp)
+            results.append({
+                'Drug': drug_name,
+                'Input': input_name,
+                'TanimotoSimilarity': sim
+            })
+
+    df = pd.DataFrame(results)
+    df.to_csv(output_file, index=False)
+    print(f"[✓] Similarity results saved to: {output_file}")
+
+# 2. Tính độ tương đồng giữa danh sách thuốc và một file duy nhất
+def calculate_structure_similarity(drug_dir, input_file, output_file, drug_list):
+    # Đọc phân tử đầu vào
+    input_mol = read_molecule(input_file)
+    if not input_mol:
+        print("Không đọc được file input.")
+        return
+    input_fp = calculate_fingerprint(input_mol)
+
+    results = []
+    for drug_name in drug_list:
+        drug_path = os.path.join(drug_dir, drug_name)
+        if not os.path.exists(drug_path):
+            print(f"[!] File không tồn tại: {drug_path}")
+            continue
+        mol = read_molecule(drug_path)
+        if mol:
+            drug_fp = calculate_fingerprint(mol)
+            sim = DataStructs.TanimotoSimilarity(drug_fp, input_fp)
+            results.append({
+                'Drug': drug_name,
+                'Input': os.path.basename(input_file),
+                'TanimotoSimilarity': sim
+            })
+
+    df = pd.DataFrame(results)
+    df.to_csv(output_file, index=False)
+    print(f"[✓] Structure similarity saved to: {output_file}")
+
+# 3. Áp dụng PCA lên kết quả độ tương đồng
+def calculate_pca(similarity_profile_file, output_file, pca_model):
+    df = pd.read_csv(similarity_profile_file)
+    if df.shape[0] == 0:
+        print("File đầu vào rỗng hoặc không hợp lệ.")
+        return
+
+    numeric_df = df.select_dtypes(include=[np.number])
+    reduced_data = pca_model.fit_transform(numeric_df)
+
+    pca_df = pd.DataFrame(reduced_data, columns=[f'PC{i+1}' for i in range(reduced_data.shape[1])])
+    non_numeric_df = df.select_dtypes(exclude=[np.number])
+    final_df = pd.concat([non_numeric_df.reset_index(drop=True), pca_df], axis=1)
+
+    final_df.to_csv(output_file, index=False)
+    print(f"[✓] PCA result saved to: {output_file}")
+
+# --- Ví dụ sử dụng ---
+# Tính độ tương đồng giữa 2 thư mục
+# calculate_drug_similarity("thu_muc_drug", "thu_muc_input", "output_similarity.csv")
+
+# Tính độ tương đồng giữa danh sách thuốc và 1 file
+# drug_list = ["aspirin.sdf", "paracetamol.sdf"]
+# calculate_structure_similarity("thu_muc_drug", "input_file.sdf", "output_struct_sim.csv", drug_list)
+
+# Thực hiện PCA
+# from sklearn.decomposition import PCA
+# pca_model = PCA(n_components=2)
+# calculate_pca("output_similarity.csv", "output_pca.csv", pca_model)
+
 
 
 

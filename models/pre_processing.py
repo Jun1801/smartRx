@@ -8,6 +8,7 @@ import pandas as pd
 import time
 import pandas as pd
 import numpy as np
+import csv
 
 from rdkit import Chem
 from rdkit.Chem import AllChem, DataStructs
@@ -17,113 +18,114 @@ from rdkit.Chem import AllChem
 from rdkit import Chem
 from tqdm import tqdm
 
-def parse_food_input(input_file: str): 
+
+def parse_food_input(input_file: str):
     """
-    Nhận vào 1 file chứa danh sách loại thuốc - thực phẩm theo cặp:
-        +) Trích xuất tên và mã hợp chất từng loại thuốc - thực phẩm
-        +) Tra cứu thông tin SMILES của thuốc và CAS number của thực phẩm từ 2 file csv trong dataset
-        +) Trả kết quả là 1 file parsed_input.txt
+    Nhận vào một file chứa danh sách loại thuốc - thực phẩm theo cặp:
+    - Trích xuất tên và mã hợp chất từng loại thuốc - thực phẩm.
+    - Tra cứu thông tin SMILES của thuốc và CAS number của thực phẩm từ 2 file CSV trong dataset.
+    - Ghi kết quả ra file 'parsed_input.csv' theo định dạng:
+      Prescription,Drug name,Smiles
     """
-    parsed=open('data/Result/parsed_input.csv','w+')
-    parsed.write('Prescription	Drug name	Smiles\n')
     food_compound = pd.read_csv('data/Dataset/food_compounds_lookup.csv')
-    merged=pd.read_csv('data/Dataset/drug_info_combined.csv')
-    all_d=[]
-    all_f=[]
+    drug_info = pd.read_csv('data/Dataset/drug_info_combined.csv')
 
-    first_line=True
+    all_drugs = []
+    all_foods = []
+
     with open(input_file, 'r') as fp:
-        for line in fp:
-            each_input=[i.lower() for i in line.strip().split('\t')]
-            if first_line:
-                for i in each_input:
-                    all_d.append(i)
-                first_line=False                      
+        for idx, line in enumerate(fp):
+            items = [i.strip().lower() for i in line.strip().split('\t')]
+            if idx == 0:
+                all_drugs.extend(items)
             else:
-                for i in each_input:
-                    all_f.append(i)
-    
-    assert len(all_d)>=1 and len(all_f)>=1, 'No valid pairs entered'
-    count=0
-    for i in all_d:
-        drug_name,drug_com=i.strip().lower().split('|')
-        name_i = drug_name+'('+drug_com+')'+'\t'
-        find_drug_1=merged.loc[merged['Name'].str.lower()==drug_com.lower()]
-        smile_i=find_drug_1['Smiles'].values[0]+'\n'
+                all_foods.extend(items)
 
-        for j in all_f:
-            food_name,food_comp=j.strip().lower().split('|')
-            
-            each_i=str(count)+'\t'
-            each_j=str(count)+'\t'
-        # Tìm kiếm thực phẩm trong danh sách
-            
-            each_i += name_i
-            each_j += food_name+'('+food_comp+')'+'\t'
-            
-            find_food_2 = food_compound.loc[food_compound['name'].str.lower()==food_comp.lower()]
-            smile_j = find_food_2['cas_number'].values[0]+'\n'
-            
-            each_i+=smile_i
-            each_j+=smile_j
-            parsed.write(each_i)
-            parsed.write(each_j)
-            count+=1
-    parsed.close()
-    return
+    assert all_drugs and all_foods, 'No valid drug-food pairs entered.'
+
+    with open('data/Result/parsed_input.csv', 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Prescription', 'Drug name', 'Smiles'])
+
+        count = 0
+        for drug_entry in all_drugs:
+            try:
+                drug_name, drug_compound = drug_entry.split('|')
+                drug_row = drug_info.loc[drug_info['Name'].str.lower() == drug_compound.lower()]
+                if drug_row.empty:
+                    continue
+                drug_smiles = drug_row['Smiles'].values[0]
+                drug_display = f"{drug_name}({drug_compound})"
+
+                for food_entry in all_foods:
+                    try:
+                        food_name, food_compound_code = food_entry.split('|')
+                        food_row = food_compound.loc[food_compound['name'].str.lower() == food_compound_code.lower()]
+                        if food_row.empty:
+                            continue
+                        food_cas = food_row['cas_number'].values[0]
+                        food_display = f"{food_name}({food_compound_code})"
+
+                        writer.writerow([count, drug_display, drug_smiles])
+                        writer.writerow([count, food_display, food_cas])
+                        count += 1
+
+                    except:
+                        continue
+
+            except:
+                continue
+
 
 def parse_drug_input(input_file: str):
     """
-    Đầu vào là file chứa danh sách thuốc:
-        +) Tách ra thuốc chính (current_drugs) và thuốc khác (other_drugs)
-        +) Truy xuất thông tin SMILES cho từng loại thuốc trong file Drug_info_combined.csv
-        +) Ghi dữ liệu ra file parsed_input.csv
+    Nhận vào một file chứa danh sách thuốc:
+    - Dòng đầu là danh sách thuốc chính (current_drugs)
+    - Dòng tiếp theo là danh sách thuốc khác (other_drugs)
+    - Truy xuất thông tin SMILES từ drug_info_combined.csv
+    - Ghi ra file parsed_input.csv theo format: Prescription, Drug name, Smiles
     """
-    parsed=open('data/Result/parsed_input.csv','w+')
-    parsed.write('Prescription	Drug name	Smiles\n')
-    merged=pd.read_csv('data/Dataset/Drug_info_combined.csv')
-    approved_drugs=set(merged['Name'].str.lower())
-    current_drug=[]
-    other_drugs=[]
 
-    first_line=True
-    with open(input_file, 'r') as fp:
-        for line in fp:
-            if first_line:
-                current_drug=line.strip().split('\t')
-                first_line=False
-            else:
-                other_drugs=line.strip().split('\t')
+    drug_info = pd.read_csv('data/Dataset/Drug_info_combined.csv')
+    drug_info['Name_lower'] = drug_info['Name'].str.lower()
 
-    count=0
-    for i in current_drug:
-        drug_name_i,drug_com_i=i.strip().lower().split('|')
-        name_i = drug_name_i+'('+drug_com_i+')'+'\t'
-        find_drug_1=merged.loc[merged['Name'].str.lower()==drug_com_i]
+    with open(input_file, 'r') as f:
+        lines = f.readlines()
 
-        for j in other_drugs:
-            drug_name_j,drug_com_j=j.strip().lower().split('|')
+    current_drugs = [i.strip() for i in lines[0].strip().split('\t')]
+    other_drugs = [i.strip() for i in lines[1].strip().split('\t')]
 
-            each_i=str(count)+'\t'
-            each_j=str(count)+'\t'
-        # Tìm kiếm thuốc trong danh sách
-            find_drug_2=merged.loc[merged['Name'].str.lower()==drug_com_j]
+    output_path = 'data/Result/parsed_input.csv'
+    with open(output_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(['Prescription', 'Drug name', 'Smiles'])
 
-            name_j = drug_name_j+'('+drug_com_j+')'+'\t'
+        count = 0
+        for drug_i in current_drugs:
+            try:
+                name_i, compound_i = drug_i.lower().split('|')
+                match_i = drug_info.loc[drug_info['Name_lower'] == compound_i]
+                if match_i.empty:
+                    continue
+                smile_i = match_i['Smiles'].values[0]
+                drug_display_i = f"{name_i}({compound_i})"
+            except:
+                continue
 
-            each_i += name_i
-            each_j += name_j
-            
-            smile_i=find_drug_1['Smiles'].values[0]+'\n'
-            smile_j=find_drug_2['Smiles'].values[0]+'\n'
-            
-            each_i+=smile_i
-            each_j+=smile_j
-            parsed.write(each_i)
-            parsed.write(each_j)
-            count+=1
-    parsed.close()
-    return 
+            for drug_j in other_drugs:
+                try:
+                    name_j, compound_j = drug_j.lower().split('|')
+                    match_j = drug_info.loc[drug_info['Name_lower'] == compound_j]
+                    if match_j.empty:
+                        continue
+                    smile_j = match_j['Smiles'].values[0]
+                    drug_display_j = f"{name_j}({compound_j})"
+                except:
+                    continue
+
+                writer.writerow([count, drug_display_i, smile_i])
+                writer.writerow([count, drug_display_j, smile_j])
+                count += 1
 
 
 def parse_DDI_input_file(input_file: str, output_file: str):
@@ -145,7 +147,6 @@ def parse_DDI_input_file(input_file: str, output_file: str):
                 drug_pair_info[prescription] = [drug_name]
             else:
                 drug_pair_info[prescription].append(drug_name)
-            
         
     out_fp = open(output_file, 'w')
     for each_prescription in drug_pair_info:
@@ -157,7 +158,6 @@ def parse_DDI_input_file(input_file: str, output_file: str):
             drug2_smiles = drug_smiles_info[(each_prescription, drug2)] 
             out_fp.write('%s\t%s\t%s\t%s\t%s\n'%(each_prescription, drug1, drug1_smiles, drug2, drug2_smiles))
     out_fp.close()
-    return
 
 
 
@@ -252,8 +252,6 @@ def calculate_pca(similarity_profile_file, output_file, pca_model):
 
 
 
-
-
 def generate_input_profile(input_file, pca_profile_file):  
     """
         +) Đọc file chứa các cặp thuốc từ đơn thuốc (input_file)
@@ -288,10 +286,6 @@ def generate_input_profile(input_file, pca_profile_file):
             val = getattr(row, col)
             feature.append(val)
             drug_feature_info[drug][col] = val
-
-    new_col1 = ['1_%s'%(i) for i in columns]
-    new_col2 = ['2_%s'%(i) for i in columns]
-    
     DDI_input = {}
     for each_drug_pair in tqdm.tqdm(interaction_list):
         prescription = each_drug_pair[0]

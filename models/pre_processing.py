@@ -156,8 +156,9 @@ def parse_DDI_input_file(input_file: str, output_file: str):
     out_fp.close()
     return
 
-# Các hàm calculate
 
+
+# Các hàm calculate
 
 # Đọc phân tử từ file định dạng SMILES, MOL, SDF, ...
 def read_molecule(file_path):
@@ -205,14 +206,11 @@ def calculate_drug_similarity(drug_dir, input_dir, output_file):
 
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
-    print(f"[✓] Similarity results saved to: {output_file}")
 
 # 2. Tính độ tương đồng giữa danh sách thuốc và một file duy nhất
 def calculate_structure_similarity(drug_dir, input_file, output_file, drug_list):
-    # Đọc phân tử đầu vào
     input_mol = read_molecule(input_file)
     if not input_mol:
-        print("Không đọc được file input.")
         return
     input_fp = calculate_fingerprint(input_mol)
 
@@ -220,7 +218,6 @@ def calculate_structure_similarity(drug_dir, input_file, output_file, drug_list)
     for drug_name in drug_list:
         drug_path = os.path.join(drug_dir, drug_name)
         if not os.path.exists(drug_path):
-            print(f"[!] File không tồn tại: {drug_path}")
             continue
         mol = read_molecule(drug_path)
         if mol:
@@ -234,13 +231,11 @@ def calculate_structure_similarity(drug_dir, input_file, output_file, drug_list)
 
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
-    print(f"[✓] Structure similarity saved to: {output_file}")
 
 # 3. Áp dụng PCA lên kết quả độ tương đồng
 def calculate_pca(similarity_profile_file, output_file, pca_model):
     df = pd.read_csv(similarity_profile_file)
     if df.shape[0] == 0:
-        print("File đầu vào rỗng hoặc không hợp lệ.")
         return
 
     numeric_df = df.select_dtypes(include=[np.number])
@@ -251,20 +246,7 @@ def calculate_pca(similarity_profile_file, output_file, pca_model):
     final_df = pd.concat([non_numeric_df.reset_index(drop=True), pca_df], axis=1)
 
     final_df.to_csv(output_file, index=False)
-    print(f"[✓] PCA result saved to: {output_file}")
 
-# --- Ví dụ sử dụng ---
-# Tính độ tương đồng giữa 2 thư mục
-# calculate_drug_similarity("thu_muc_drug", "thu_muc_input", "output_similarity.csv")
-
-# Tính độ tương đồng giữa danh sách thuốc và 1 file
-# drug_list = ["aspirin.sdf", "paracetamol.sdf"]
-# calculate_structure_similarity("thu_muc_drug", "input_file.sdf", "output_struct_sim.csv", drug_list)
-
-# Thực hiện PCA
-# from sklearn.decomposition import PCA
-# pca_model = PCA(n_components=2)
-# calculate_pca("output_similarity.csv", "output_pca.csv", pca_model)
 
 
 

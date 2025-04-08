@@ -22,7 +22,7 @@ def parse_food_input(input_file: str):
     +) Trích xuất tên và mã hợp chất từng loại thuốc - thực phẩm
     +) Tra cứu thông tin SMILES của thuốc và CAS number của thực phẩm từ 2 file csv trong dataset
     +) Trả kết quả là 1 file parsed_input.txt"""
-    parsed=open('data/Dataset/parsed_input.txt','w+')
+    parsed=open('data/Result/parsed_input.txt','w+')
     parsed.write('Prescription	Drug name	Smiles\n')
     food_compound = pd.read_csv('data/Dataset/food_compounds_lookup.csv')
     merged=pd.read_csv('data/Dataset/drug_info_combined.csv')
@@ -76,7 +76,7 @@ def parse_drug_input(input_file: str):
     +) Tách ra thuốc chính (current_drugs) và thuốc khác (other_drugs)
     +) Truy xuất thông tin SMILES cho từng loại thuốc trong file Drug_info_combined.csv
     +) Ghi dữ liệu ra file parsed_input.txt"""
-    parsed=open('data/Dataset/parsed_input.txt','w+')
+    parsed=open('data/Result/parsed_input.txt','w+')
     parsed.write('Prescription	Drug name	Smiles\n')
     merged=pd.read_csv('data/Dataset/Drug_info_combined.csv')
     approved_drugs=set(merged['Name'].str.lower())

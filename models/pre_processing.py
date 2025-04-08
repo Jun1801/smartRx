@@ -8,6 +8,7 @@ import pandas as pd
 import time
 import pandas as pd
 import numpy as np
+
 from rdkit import Chem
 from rdkit.Chem import AllChem, DataStructs
 from sklearn.decomposition import PCA
@@ -19,10 +20,11 @@ from tqdm import tqdm
 def parse_food_input(input_file: str): 
     """
     Nhận vào 1 file chứa danh sách loại thuốc - thực phẩm theo cặp:
-    +) Trích xuất tên và mã hợp chất từng loại thuốc - thực phẩm
-    +) Tra cứu thông tin SMILES của thuốc và CAS number của thực phẩm từ 2 file csv trong dataset
-    +) Trả kết quả là 1 file parsed_input.txt"""
-    parsed=open('data/Result/parsed_input.txt','w+')
+        +) Trích xuất tên và mã hợp chất từng loại thuốc - thực phẩm
+        +) Tra cứu thông tin SMILES của thuốc và CAS number của thực phẩm từ 2 file csv trong dataset
+        +) Trả kết quả là 1 file parsed_input.txt
+    """
+    parsed=open('data/Result/parsed_input.csv','w+')
     parsed.write('Prescription	Drug name	Smiles\n')
     food_compound = pd.read_csv('data/Dataset/food_compounds_lookup.csv')
     merged=pd.read_csv('data/Dataset/drug_info_combined.csv')
@@ -73,10 +75,11 @@ def parse_food_input(input_file: str):
 def parse_drug_input(input_file: str):
     """
     Đầu vào là file chứa danh sách thuốc:
-    +) Tách ra thuốc chính (current_drugs) và thuốc khác (other_drugs)
-    +) Truy xuất thông tin SMILES cho từng loại thuốc trong file Drug_info_combined.csv
-    +) Ghi dữ liệu ra file parsed_input.txt"""
-    parsed=open('data/Result/parsed_input.txt','w+')
+        +) Tách ra thuốc chính (current_drugs) và thuốc khác (other_drugs)
+        +) Truy xuất thông tin SMILES cho từng loại thuốc trong file Drug_info_combined.csv
+        +) Ghi dữ liệu ra file parsed_input.csv
+    """
+    parsed=open('data/Result/parsed_input.csv','w+')
     parsed.write('Prescription	Drug name	Smiles\n')
     merged=pd.read_csv('data/Dataset/Drug_info_combined.csv')
     approved_drugs=set(merged['Name'].str.lower())
@@ -253,10 +256,10 @@ def calculate_pca(similarity_profile_file, output_file, pca_model):
 
 def generate_input_profile(input_file, pca_profile_file):  
     """
-    +) Đọc file chứa các cặp thuốc từ đơn thuốc (input_file)
-    +) Đọc file vector PCA của từng thuốc (pca_profile_file)
-    +) Với mỗi cặp thuốc (drug1, drug2), kết hợp vector PCA của cả 2 thành 1 vector 100 chiều (50+50)
-    +) Trả về một Dataframe để đưa vào model 
+        +) Đọc file chứa các cặp thuốc từ đơn thuốc (input_file)
+        +) Đọc file vector PCA của từng thuốc (pca_profile_file)
+        +) Với mỗi cặp thuốc (drug1, drug2), kết hợp vector PCA của cả 2 thành 1 vector 100 chiều (50+50)
+        +) Trả về một Dataframe để đưa vào model 
     """  
     df = pd.read_csv(pca_profile_file, index_col=0)
     # df.index = df.index.map(str)

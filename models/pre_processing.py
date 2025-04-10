@@ -1,9 +1,11 @@
 import os
 import itertools
 import csv
+import sys 
 
 import pandas as pd
 import numpy as np
+import warnings
 
 import rdkit
 from rdkit import Chem
@@ -11,13 +13,14 @@ from rdkit.Chem import AllChem, DataStructs
 from rdkit import DataStructs
 from rdkit.Chem import AllChem
 from rdkit import Chem
+from contextlib import contextmanager
 
 from tqdm import tqdm
 
 
 def parse_food_input(input_file: str) -> None:
     """
-    Phân tích file chứa danh sách thuốc và thực phẩm, truy xuất thông tin SMILES và CAS number 
+    Phân tích file chứa danh sách thuốc và thực phẩm, truy xuất thông tin SMILES và CAS number
     từ các file lookup, sau đó lưu kết quả vào file CSV theo định dạng: Prescription, Drug name, Smiles
 
     Tham số:
@@ -79,10 +82,9 @@ def parse_food_input(input_file: str) -> None:
             except:
                 continue
 
-
 def parse_drug_input(input_file: str) -> None:
     """
-    Phân tích file chứa danh sách thuốc, truy xuất thông tin SMILES và xuất ra file CSV 
+    Phân tích file chứa danh sách thuốc, truy xuất thông tin SMILES và xuất ra file CSV
     theo từng cặp thuốc chính và phụ.
 
     Tham số:
@@ -132,11 +134,10 @@ def parse_drug_input(input_file: str) -> None:
                 writer.writerow([count, drug_display_j, smile_j])
                 count += 1
 
-
-def parse_DDI_input_file(input_file: str, 
+def parse_DDI_input_file(input_file: str,
                          output_file: str) -> None:
     """
-    Đọc file chứa danh sách thuốc theo đơn và sinh tất cả các cặp thuốc có thể có kèm SMILES, 
+    Đọc file chứa danh sách thuốc theo đơn và sinh tất cả các cặp thuốc có thể có kèm SMILES,
     rồi lưu vào file CSV theo định dang: Prescription, Drug1, Drug1_SMILES, Drug2, Drug2_SMILES
 
     Tham số:
@@ -152,10 +153,10 @@ def parse_DDI_input_file(input_file: str,
             prescription = line_split[0].strip()
             drug_name = line_split[1].strip()
             smiles = line_split[2].strip()
-            
+
             drug_smiles_info[(prescription, drug_name)] = smiles
             drug_pair_info.setdefault(prescription, []).append(drug_name)
-        
+
     with open(output_file, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Prescription', 'Drug1', 'Drug1_SMILES', 'Drug2', 'Drug2_SMILES'])
@@ -163,10 +164,10 @@ def parse_DDI_input_file(input_file: str,
         for each_prescription in drug_pair_info:
             drug_names = drug_pair_info[each_prescription]
             for drug1, drug2 in itertools.combinations(drug_names, 2):
-                drug1_smiles = drug_smiles_info[(each_prescription, drug1)] 
-                drug2_smiles = drug_smiles_info[(each_prescription, drug2)] 
+                drug1_smiles = drug_smiles_info[(each_prescription, drug1)]
+                drug2_smiles = drug_smiles_info[(each_prescription, drug2)]
                 writer.writerow([each_prescription, drug1, drug1_smiles, drug2, drug2_smiles])
-
+                
 def _read_molecule(file_path: str) -> rdkit.Chem.Mol|None:
     """
     Đọc phân tử từ file có định dạng SMILES (.smi), MOL (.mol), SDF (.sdf)
@@ -179,7 +180,7 @@ def _read_molecule(file_path: str) -> rdkit.Chem.Mol|None:
     """
 
     ext = os.path.splitext(file_path)[1].lower()
-    
+
     if ext == '.smi':
         with open(file_path, 'r') as f:
             line = f.readline().strip()
@@ -191,7 +192,7 @@ def _read_molecule(file_path: str) -> rdkit.Chem.Mol|None:
         return suppl[0] if suppl and suppl[0] is not None else None
     else:
         return None
-
+        
 def _calculate_fingerprint(mol: rdkit.Chem.Mol) -> rdkit.DataStructs.ExplicitBitVect:
     """
     Tính fingerprint ECFP4 dưới dạng vector nhị phân từ một phân tử RDKit.
@@ -204,8 +205,8 @@ def _calculate_fingerprint(mol: rdkit.Chem.Mol) -> rdkit.DataStructs.ExplicitBit
     """
     return AllChem.GetMorganFingerprintAsBitVect(mol, radius=2, nBits=2048)
 
-def calculate_drug_similarity(drug_dir: str, 
-                              input_dir: str, 
+def calculate_drug_similarity(drug_dir: str,
+                              input_dir: str,
                               output_file: str) -> None:
     """
     Tính độ tương đồng Tanimoto giữa tất cả thuốc trong 2 thư mục chứa file phân tử.
@@ -240,35 +241,36 @@ def calculate_drug_similarity(drug_dir: str,
     df = pd.DataFrame(results)
     df.to_csv(output_file, index=False)
 
-# 2. Tính độ tương đồng giữa danh sách thuốc và một file duy nhất
-def calculate_structure_similarity(drug_dir: str, 
-                                   input_file: str, 
-                                   output_file: str, 
-                                   drug_list_file: str) -> None:
-    """
-    Tính toán độ tương đồng cấu trúc (Tanimoto similarity) giữa các thuốc trong input_file
-    và các thuốc trong thư mục drug_dir. Kết quả là ma trận similarity được lưu thành CSV.
 
-    Parameters:
-        drug_dir: Đường dẫn thư mục chứa các file thuốc (.mol/.sdf)
-        input_file: File CSV chứa thông tin các cặp thuốc theo đơn
-                            (gồm các cột: Prescription, Drug1, Smiles1, Drug2, Smiles2)
-        output_file: File CSV đầu ra chứa ma trận độ tương đồng
-        drug_list_file: File chứa danh sách các drugbank_id cần giữ lại trong ma trận
-    """
+# 2. Tính độ tương đồng giữa danh sách thuốc và một file duy nhất
+@contextmanager
+def suppress_stderr():
+    with open(os.devnull, 'w') as devnull:
+        old_stderr = sys.stderr
+        sys.stderr = devnull
+        try:
+            yield
+        finally:
+            sys.stderr = old_stderr
+
+def calculate_structure_similarity(drug_dir: str,
+                                   input_file: str,
+                                   output_file: str,
+                                   drug_list_file: str) -> None:
+    # Đọc danh sách ID thuốc cần giữ (trong trường hợp cần đối chiếu)
+    with open(drug_list_file, "r") as f:
+        drug_list = [line.strip() for line in f if line.strip()]
+
+    # Danh sách file .mol/.sdf
     drugbank_files = [
         os.path.join(drug_dir, f)
         for f in os.listdir(drug_dir)
         if os.path.isfile(os.path.join(drug_dir, f))
     ]
 
-    with open(drug_list_file, "r") as f:
-        drug_list = [line.strip() for line in f if line.strip()]
-
-    all_input_drug_info = {}
-
-    # Đọc thông tin từ file CSV input
+    # Đọc dữ liệu tương tác
     df_input = pd.read_csv(input_file)
+    all_input_drug_info = {}
 
     for _, row in df_input.iterrows():
         drug1 = str(row['Drug1']).strip()
@@ -285,13 +287,12 @@ def calculate_structure_similarity(drug_dir: str,
 
     for input_drug_id, smiles in all_input_drug_info.items():
         try:
-            mol2 = Chem.MolFromSmiles(smiles)
-
-            if mol2 is None:
-                continue
-
-            mol2 = AllChem.AddHs(mol2)
-            fps2 = AllChem.GetMorganFingerprint(mol2, 2)
+            with suppress_stderr():
+                mol2 = Chem.MolFromSmiles(smiles)
+                if mol2 is None:
+                    continue
+                mol2 = AllChem.AddHs(mol2)
+                fps2 = AllChem.GetMorganFingerprint(mol2, 2)
         except:
             continue
 
@@ -301,30 +302,22 @@ def calculate_structure_similarity(drug_dir: str,
             drugbank_id = os.path.basename(drug_path).split('.')[0]
 
             try:
-                mol1 = Chem.MolFromMolFile(drug_path)
+                with suppress_stderr():
+                    mol1 = Chem.MolFromMolFile(drug_path)
+                    if mol1 is None:
+                        continue
+                    mol1 = AllChem.AddHs(mol1)
+                    fps1 = AllChem.GetMorganFingerprint(mol1, 2)
 
-                if mol1 is None:
-                    continue
-
-                mol1 = AllChem.AddHs(mol1)
-                fps1 = AllChem.GetMorganFingerprint(mol1, 2)
                 score = DataStructs.TanimotoSimilarity(fps1, fps2)
                 drug_similarity_info[input_drug_id][drugbank_id] = score
             except:
                 continue
 
-    df = pd.DataFrame.from_dict(drug_similarity_info, orient='index')
-
-    # Chỉ giữ lại các cột có trong drug_list và tồn tại trong df.columns
-    valid_columns = [col for col in drug_list if col in df.columns]
-    df = df[valid_columns]
-
-    df.to_csv(output_file)
-
 # 3. Áp dụng PCA lên kết quả độ tương đồng
-def calculate_pca(similarity_profile_file: str, 
-                  output_file: str, 
-                  pca_model: str) -> None:
+def calculate_pca(similarity_profile_file: str,
+                  output_file: str,
+                  pca_model_path: str) -> None:
     """
     Áp dụng PCA lên ma trận độ tương đồng để giảm số chiều và lưu kết quả vào file CSV.
 
@@ -334,87 +327,77 @@ def calculate_pca(similarity_profile_file: str,
         pca_model: File PKL chứa mô hình PCA đã huấn luyện (scikit-learn PCA object).
     """
 
+    # Load PCA model
+    with open(pca_model_path, 'rb') as f:
+        pca_model = pickle.load(f)
+
     df = pd.read_csv(similarity_profile_file)
     if df.shape[0] == 0:
         return
 
-    numeric_df = df.select_dtypes(include=[np.number])
-    reduced_data = pca_model.fit_transform(numeric_df)
+    # Lấy dữ liệu số và thay NaN = 0
+    numeric_df = df.select_dtypes(include=[np.number]).fillna(0.0)
 
+    # Kiểm tra số chiều khớp với PCA model
+    if numeric_df.shape[1] != pca_model.n_features_:
+        raise ValueError(f"PCA input mismatch: expected {pca_model.n_features_} features, got {numeric_df.shape[1]}.")
+
+    reduced_data = pca_model.transform(numeric_df)
+
+    # Kết hợp lại
     pca_df = pd.DataFrame(reduced_data, columns=[f'PC{i+1}' for i in range(reduced_data.shape[1])])
     non_numeric_df = df.select_dtypes(exclude=[np.number])
     final_df = pd.concat([non_numeric_df.reset_index(drop=True), pca_df], axis=1)
 
     final_df.to_csv(output_file, index=False)
 
-
-def generate_input_profile(input_file: str, 
-                           pca_profile_file: str) -> pd.DataFrame:  
+def generate_input_profile(input_file: str,
+                           pca_profile_file: str) -> pd.DataFrame:
     """
     Kết hợp vector PCA của từng cặp thuốc từ đơn thuốc thành một vector đặc trưng đầu vào cho mô hình DNN.
 
     Tham số:
-        input_file: File chứa danh sách các cặp thuốc trong đơn (prescription, drug1, ..., drug2).
-        pca_profile_file: File chứa vector PCA của từng thuốc.
+        input_file: File CSV chứa danh sách các cặp thuốc (Prescription, Drug1, Drug1_SMILES, Drug2, Drug2_SMILES).
+        pca_profile_file: File chứa vector PCA của từng thuốc (drug_id làm chỉ mục).
+        output_file: Đường dẫn lưu kết quả đầu ra (CSV).
 
     Trả về:
-        DataFrame gồm các vector đặc trưng đầu vào (100 chiều) cho từng cặp thuốc.
+        DataFrame gồm các vector đặc trưng đầu vào cho từng cặp thuốc.
     """
-    df = pd.read_csv(pca_profile_file, index_col=0)
-    # df.index = df.index.map(str)
-    
-    all_drugs = []
+    # Load PCA profile (chỉ mục là drug_id)
+    df_pca = pd.read_csv(pca_profile_file, index_col=0)
+
+    # Load danh sách cặp thuốc từ input CSV
+    df_input = pd.read_csv(input_file)
+
     interaction_list = []
-    with open(input_file, 'r') as fp:
-        for line in fp:
-            line_split = line.strip().split('\t')
-            prescription = line_split[0].strip()
+    for _, row in df_input.iterrows():
+        prescription = str(row['Prescription']).strip()
+        drug1 = str(row['Drug1']).strip()
+        drug2 = str(row['Drug2']).strip()
 
-            drug1 = line_split[1].strip()
-            drug2 = line_split[3].strip()
+        # Chỉ thêm vào nếu cả hai thuốc có PCA vector
+        if drug1 in df_pca.index and drug2 in df_pca.index:
+            interaction_list.append([prescription, drug1, drug2])
+            interaction_list.append([prescription, drug2, drug1])  # Đảo chiều
 
-            all_drugs.append(drug1)
-            all_drugs.append(drug2)
-
-            if drug1 in df.index and drug2 in df.index:
-                interaction_list.append([prescription, drug1, drug2]) # Cặp A - B và Cặp B - A là tương tự 
-                interaction_list.append([prescription, drug2, drug1]) 
-    
-    drug_feature_info = {}
-    columns = ['PC_%d' % (i + 1) for i in range(50)]
-    for row in df.itertuples():
-        drug = row.Index
-        feature = []
-        drug_feature_info[drug] = {}
-        for col in columns:
-            val = getattr(row, col)
-            feature.append(val)
-            drug_feature_info[drug][col] = val
+    # Lấy các cột PCA
+    pca_columns = [col for col in df_pca.columns if col.startswith("PC") or col.startswith("PC_")]
+    drug_feature_info = df_pca[pca_columns].to_dict(orient='index')
 
     ddi_input = {}
-    for each_drug_pair in tqdm.tqdm(interaction_list):
-        prescription = each_drug_pair[0]
-        drug1 = each_drug_pair[1]
-        drug2 = each_drug_pair[2]
-        key = '%s_%s_%s' % (prescription, drug1, drug2)
-        
+    for prescription, drug1, drug2 in tqdm(interaction_list):
+        key = f"{prescription}_{drug1}_{drug2}"
         ddi_input[key] = {}
-        for col in columns:
-            new_col = '1_%s'%(col)
-            ddi_input[key][new_col] = drug_feature_info[drug1][col]
-            
-        for col in columns:
-            new_col = '2_%s'%(col)
-            ddi_input[key][new_col] = drug_feature_info[drug2][col]
 
-    new_columns = []
-    for i in [1, 2]:
-        for j in range(1, 51):
-            new_key = '%s_PC_%s'%(i, j)
-            new_columns.append(new_key)
-            
-    df = pd.DataFrame.from_dict(ddi_input)
-    df = df.T
-    df = df[new_columns]
-    # df.to_csv(output_file)
-    return df
+        for col in pca_columns:
+            ddi_input[key][f"1_{col}"] = drug_feature_info[drug1][col]
+            ddi_input[key][f"2_{col}"] = drug_feature_info[drug2][col]
+
+    # Đảm bảo thứ tự cột 1_PC1..PC50, 2_PC1..PC50
+    new_columns = [f"{i}_{col}" for i in [1, 2] for col in pca_columns]
+    df_result = pd.DataFrame.from_dict(ddi_input, orient='index')
+    df_result = df_result[new_columns]
+    # df_result.to_csv("/content/drive/MyDrive/Hackathon 2024 _ SmartRx/Results/output_ddi_pair.csv")
+
+    return df_result

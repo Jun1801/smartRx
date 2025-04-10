@@ -3,18 +3,19 @@ from typing import Dict, List, Tuple
 import pandas as pd
 import tqdm
 import re
+import csv
 
 pd.set_option('mode.chained_assignment', None)
 
 def read_information_file(information_file: str) -> Dict:
     """
     Đọc file thông tin tương tác và trả về dictionary ánh xạ kiểu tương tác với câu mô tả.
-    
+
     Tham số:
         information_file: Đường dẫn tới file chứa thông tin. File có định dạng:
-                                dòng đầu tiên là header, các dòng sau có cấu trúc: 
+                                dòng đầu tiên là header, các dòng sau có cấu trúc:
                                 "<interaction_type>\t<sentence>"
-                                
+
     Trả về:
         dict: Dictionary với key là interaction_type (str) và value là câu mô tả (str).
     """
@@ -33,11 +34,11 @@ def read_information_file(information_file: str) -> Dict:
 def read_drug_information(drug_information_file: str) -> Dict:
     """
     Đọc file thông tin thuốc và trả về dictionary ánh xạ drugbank_id với danh sách target tương ứng.
-    
+
     Tham số:
-        drug_information_file: Đường dẫn tới file thông tin thuốc. Mỗi dòng chứa nhiều trường dữ liệu, trong đó lần lượt là: 
+        drug_information_file: Đường dẫn tới file thông tin thuốc. Mỗi dòng chứa nhiều trường dữ liệu, trong đó lần lượt là:
                                      drugbank_id (str), drugbank_name (str), action (str), pharmacological_action (str), target (str)
-    
+
     Trả về:
         dict: Dictionary với key là drugbank_id (str) và value là danh sách các target (list[str]).
               Chỉ lưu những dòng có action khác 'None' và target khác 'None'.
@@ -49,25 +50,24 @@ def read_drug_information(drug_information_file: str) -> Dict:
             drugbank_id = line_split[0].strip()
             action = line_split[7].strip()
             target = line_split[5].strip()
-            
-            if action != 'None' and target != 'None':                
+
+            if action != 'None' and target != 'None':
                 if drugbank_id not in drug_information:
                     drug_information[drugbank_id] = [target]
                 else:
                     drug_information[drugbank_id].append(target)
     return drug_information
 
-
 def read_drug_enzyme_information(drug_enzyme_information_file: str) -> Dict:
     """
     Đọc file thông tin enzyme liên quan đến thuốc và trả về dictionary ánh xạ drugbank_id với danh sách uniprot_id tương ứng.
-    
+
     Tham số:
         drug_enzyme_information_file: Đường dẫn tới file thông tin enzyme. Mỗi dòng chứa:
                                       drugbank_id, uniprot_id, action
-    
+
     Trả về:
-        dict: Dictionary với key là drugbank_id và value là danh sách uniprot_id 
+        dict: Dictionary với key là drugbank_id và value là danh sách uniprot_id
               cho những dòng có uniprot_id và action khác 'None'.
     """
     drug_information = {}
@@ -77,26 +77,25 @@ def read_drug_enzyme_information(drug_enzyme_information_file: str) -> Dict:
             drugbank_id = line_split[0].strip()
             uniprot_id = line_split[4].strip()
             action = line_split[5].strip()
-            
+
             if uniprot_id != 'None' and action != 'None':
                 if drugbank_id not in drug_information:
                     drug_information[drugbank_id] = [uniprot_id]
                 else:
                     drug_information[drugbank_id].append(uniprot_id)
-                    
-    return drug_information
 
+    return drug_information
 
 def read_known_DDI_information(known_DDI_file: str) -> Tuple[Dict, Dict]:
     """
     Đọc file thông tin DDI đã biết và trả về 2 dictionary chứa thông tin các thuốc
     bên trái và bên phải của từng tương tác.
-    
+
     Tham số:
         known_DDI_file: Đường dẫn tới file thông tin DDI, với định dạng:
                         Dòng đầu tiên là header, các dòng sau có cấu trúc:
                         "<left_drug><right_drug><interaction_type>"
-    
+
     Trả về:
         tuple: (left_ddi_info, right_ddi_info)
             left_ddi_info (dict): Ánh xạ interaction_type (str) tới danh sách thuốc bên trái (không có duplicates).
@@ -112,26 +111,25 @@ def read_known_DDI_information(known_DDI_file: str) -> Tuple[Dict, Dict]:
             left_drug = line_split[0].strip()
             right_drug = line_split[1].strip()
             interaction_type = line_split[2].strip()
-            
+
             if interaction_type not in left_ddi_info:
                 left_ddi_info[interaction_type] = [left_drug]
             else:
                 left_ddi_info[interaction_type].append(left_drug)
-                
+
             if interaction_type not in right_ddi_info:
                 right_ddi_info[interaction_type] = [right_drug]
             else:
                 right_ddi_info[interaction_type].append(right_drug)
-    
+
     # Loại bỏ duplicates
     for each_interaction_type in left_ddi_info:
         left_ddi_info[each_interaction_type] = list(set(left_ddi_info[each_interaction_type]))
-    
+
     for each_interaction_type in right_ddi_info:
         right_ddi_info[each_interaction_type] = list(set(right_ddi_info[each_interaction_type]))
-        
-    return left_ddi_info, right_ddi_info
 
+    return left_ddi_info, right_ddi_info
 
 def read_similarity_file(similarity_file: str) -> pd.DataFrame:
     """
@@ -147,51 +145,15 @@ def read_similarity_file(similarity_file: str) -> pd.DataFrame:
     return similarity_df
 
 
-def get_side_effects(df: pd.DataFrame, 
-                     target_drug: str, 
-                     frequency: int = 10) -> str:
-    """
-    Lấy thông tin side effects của một thuốc dựa trên DataFrame chứa thông tin side effects.
-    
-    Tham số:
-        df: DataFrame chứa thông tin side effects với các cột bao gồm 'Drug name', 'SIDE EFFECT', 'MEAN'.
-        target_drug: Tên thuốc cần tra cứu side effects.
-        frequency: Ngưỡng giá trị trung bình (MEAN) để chọn lọc side effect. Mặc định là 10.
-        
-    Trả về:
-        str: Chuỗi được ghép các side effect của thuốc, mỗi side effect có định dạng "SIDE_EFFECT(XX.X%)",
-             được phân cách bởi dấu chấm phẩy. Nếu không có side effects nào thỏa mãn điều kiện, trả về chuỗi rỗng.
-    """
-    new_df = df[df['Drug name'] == target_drug]
-    new_df = new_df[new_df['MEAN'] >= frequency]
-    drug_side_effect_info = {}
-    
-    for each_drug, each_df in new_df.groupby('Drug name'):
-        string_list = []
-        for each_index, each_df in each_df.iterrows():
-            side_effect = each_df['SIDE EFFECT']
-            mean_frequency = each_df['MEAN']
-            string_list.append('%s(%.1f%%)' % (side_effect, mean_frequency))
-            
-        drug_side_effect_info[each_drug] = ';'.join(string_list)
-    
-    string_list = []
-    for each_drug in drug_side_effect_info:
-        string_list.append('%s' % (drug_side_effect_info[each_drug]))
-        
-    side_effect_string = ';'.join(string_list)
-    return side_effect_string
-
-
-def read_side_effect_info(df: pd.DataFrame, 
+def read_side_effect_info(df: pd.DataFrame,
                           frequency: int = 10) -> Dict:
     """
     Đọc và tổng hợp thông tin side effects của các thuốc từ DataFrame.
-    
+
     Tham số:
         df: DataFrame chứa thông tin side effects với các cột 'Drug name', 'SIDE EFFECT', 'MEAN'.
         frequency: Ngưỡng giá trị trung bình (MEAN) để chọn lọc side effect. Mặc định là 10.
-        
+
     Trả về:
         dict: Dictionary với key là tên thuốc (đã chuyển về chữ thường) và value là chuỗi side effects
               được ghép lại dưới định dạng "SIDE_EFFECT(XX.X%)", phân cách bởi dấu chấm phẩy.
@@ -205,154 +167,225 @@ def read_side_effect_info(df: pd.DataFrame,
             side_effect = each_df['SIDE EFFECT']
             mean_frequency = each_df['MEAN']
             string_list.append('%s(%.1f%%)' % (side_effect, mean_frequency))
-            
+
         drug_side_effect_info[each_drug.lower()] = ';'.join(string_list)
-    
+
     return drug_side_effect_info
 
+# Đọc dữ liệu từ hai file
+predict_df = pd.read_csv("data/Result/output_predict_DDI.csv")
+interaction_df = pd.read_csv("data/Dataset/Interaction_information_cleaned.csv")
 
-def annotate_DDI_results(DDI_output_file: str, 
-                         similarity_file: str, 
-                         known_DDI_file: str, 
-                         output_file: str, 
-                         side_effect_information_file: str, 
-                         model_threshold: float, 
+# Tạo các cột bổ sung
+predict_df["Prescription"] = [int(row.split("_")[0]) for row in predict_df["Drug pair"]]
+predict_df["Drug_pair"] = predict_df["Drug pair"]
+predict_df["DDI_type"] = predict_df["Predicted class"]
+
+# Chuyển kiểu dữ liệu cho cột type để ánh xạ chính xác
+interaction_df["type"] = interaction_df["type"].astype(int)
+
+# Ánh xạ từ DDI_type sang câu mô tả tương ứng trong interaction_df
+predict_df["Sentence"] = predict_df["DDI_type"].map(interaction_df.set_index("type")["sentence"])
+
+# Sắp xếp lại thứ tự cột theo yêu cầu
+final_df = predict_df[["Prescription", "Drug_pair", "DDI_type", "Sentence", "Predicted class", "Score", "STD"]]
+
+# Lưu file kết quả
+final_df.to_csv("data/Result/output_predict_DDI_combined.csv", index=False)
+
+
+def annotate_DDI_results(DDI_output_file: str,
+                         similarity_file: str,
+                         known_DDI_file: str,
+                         output_file: str,
+                         side_effect_information_file: str,
+                         model_threshold: float,
                          structure_threshold: float) -> None:
     """
-    Ghi annotation cho kết quả dự đoán DDI và xuất ra file kết quả.
-    
-    Quy trình:
-        - Đọc thông tin thuốc, enzyme, DDI đã biết, bảng tương đồng, và thông tin side effect.
-        - Duyệt qua từng dòng dự đoán trong file DDI_output_file.
-        - Lấy thông tin side effect cho từng thuốc dựa trên các giá trị trong file side effect.
-        - Tính toán Confidence_DDI dựa trên model_threshold.
-        - Lấy các thuốc tương đồng với cấu trúc đạt yêu cầu dựa trên structure_threshold từ bảng similarity.
-        - Ghi toàn bộ thông tin annotation ra file output_file.
-    
-    Tham số:
-        DDI_output_file: Đường dẫn tới file chứa kết quả dự đoán DDI (dạng TSV).
-        similarity_file: Đường dẫn tới file CSV chứa bảng tương đồng.
-        known_DDI_file: Đường dẫn tới file thông tin DDI đã biết.
-        output_file: Đường dẫn file sẽ ghi kết quả annotation.
-        side_effect_information_file: Đường dẫn tới file side effect (dạng TSV).
-        model_threshold: Ngưỡng để xác định Confidence_DDI.
-        structure_threshold: Ngưỡng để chọn lọc cấu trúc tương đồng.
+    Ghi annotation cho kết quả dự đoán DDI và xuất ra file .csv chuẩn.
+
+    Các bước:
+        - Đọc thông tin DDI, tương đồng cấu trúc, tác dụng phụ.
+        - Dự đoán tương tác với confidence cao.
+        - Ghi annotation ra file CSV với side effect và các thuốc tương đồng.
     """
-    
-    left_ddi_info, right_ddi_info = read_known_DDI_information(known_DDI_file)    
+
+    # Giả sử các hàm phụ dưới đây đã được định nghĩa:
+    # read_known_DDI_information, read_similarity_file, read_side_effect_info
+    left_ddi_info, right_ddi_info = read_known_DDI_information(known_DDI_file)
     similarity_df = read_similarity_file(similarity_file)
-    DDI_prediction_df = pd.read_csv(DDI_output_file, sep='\t')
+    DDI_prediction_df = pd.read_csv(DDI_output_file)  # File output_predict_DDI_combined.csv
     side_effect_df = pd.read_csv(side_effect_information_file, sep='\t')
     drug_side_effect_info = read_side_effect_info(side_effect_df, frequency=10)
-    fp = open(output_file, 'w')
-    fp.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-             ('Prescription', 'Drug_pair', 'Interaction_type', 'Sentence', 'DDI_prob', 'DDI_prob_std', 'Confidence_DDI',   
-              'Side effects (left)', 'Side effects (right)', 'Similar approved drugs (left)', 'Similar approved drugs (right)',
-              'drug1', 'drug2'))
 
-    for row in tqdm.tqdm(DDI_prediction_df.itertuples(), total=len(DDI_prediction_df)):
-        prescription = str(getattr(row, 'Prescription'))
-        drug_pair = getattr(row, 'Drug_pair')
-        
-        left_drug, right_drug = drug_pair.split('_')
-        DDI_type = str(getattr(row, 'DDI_type'))
-        sentence = getattr(row, 'Sentence')
-        score = getattr(row, 'Score')
-        std = getattr(row, 'STD')
-        Confidence_DDI = 0
-        left_drug_side_effect = ''
-        right_drug_side_effect = ''
+    with open(output_file, 'w', newline='') as fp:
+        writer = csv.writer(fp)
 
-        # Lấy thông tin side effect của từng thuốc từ chuỗi tên (có chứa dấu ngoặc)
-        left_comp, right_comp = re.findall('.*\((.*)\)$', left_drug)[0], re.findall('.*\((.*)\)$', right_drug)[0]
-        if left_comp in drug_side_effect_info:
-            left_drug_side_effect = drug_side_effect_info[left_comp]
-        if right_comp in drug_side_effect_info:
-            right_drug_side_effect = drug_side_effect_info[right_comp]
+        # Ghi header vào file CSV
+        writer.writerow([
+            'Prescription', 'Drug_pair', 'Interaction_type', 'Sentence',
+            'DDI_prob', 'DDI_prob_std', 'Confidence_DDI',
+            'Side effects (left)', 'Side effects (right)',
+            'Similar approved drugs (left)', 'Similar approved drugs (right)',
+            'drug1', 'drug2'
+        ])
 
-        if score - std/2 > model_threshold:
-            Confidence_DDI = 1
-            
-        left_corresponding_drugs = left_ddi_info[DDI_type]
-        right_corresponding_drugs = right_ddi_info[DDI_type]
-        
-        left_drug_similarity_df = similarity_df.loc[left_drug][left_corresponding_drugs]
-        left_selected_drugs = list(left_drug_similarity_df[left_drug_similarity_df >= structure_threshold].index)
-        
-        right_drug_similarity_df = similarity_df.loc[right_drug][right_corresponding_drugs]
-        right_selected_drugs = list(right_drug_similarity_df[right_drug_similarity_df >= structure_threshold].index)
+        # Duyệt qua các dòng của DataFrame
+        for row in tqdm.tqdm(DDI_prediction_df.itertuples(index=False), total=len(DDI_prediction_df)):
+            row_dict = row._asdict()
 
-        left_drug_annotation_string = ';'.join(left_selected_drugs)
-        right_drug_annotation_string = ';'.join(right_selected_drugs)
-        fp.write('%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' %
-                 (prescription, drug_pair, DDI_type, sentence, score, std, Confidence_DDI,
-                  left_drug_side_effect, right_drug_side_effect, left_drug_annotation_string, 
-                  right_drug_annotation_string, left_drug, right_drug))
-    
-    fp.close()        
-    return
+            prescription = str(row_dict.get('Prescription'))
+            drug_pair = row_dict.get('Drug_pair')
+            DDI_type = str(row_dict.get('DDI_type'))
+            sentence = row_dict.get('Sentence')
+            score = float(row_dict.get('Score'))
+            std = float(row_dict.get('STD'))
+            Confidence_DDI = 0
+
+            # Nếu drug_pair có tiền tố dạng "số_" thì loại bỏ tiền tố đó trước khi tách
+            match_prefix = re.match(r'\d+_(.+)', drug_pair)
+            if match_prefix:
+                rest = match_prefix.group(1)
+            else:
+                rest = drug_pair
+
+            # Dùng regex để tách thông tin của thuốc trái và thuốc phải
+            # Mẫu: phần trái và phải có cấu trúc: "tênthuốc(thanh phần)"
+            match = re.match(r'(.+\([^()]+\))_(.+\([^()]+\))', rest)
+            if not match:
+                print(f"[!] Lỗi định dạng Drug_pair: {drug_pair}")
+                continue  # Bỏ qua dòng không khớp định dạng
+            left_drug, right_drug = match.groups()
+
+            # Tách lấy thông tin bên trong ngoặc làm drugbank ID hoặc thông tin nhận dạng
+            left_comp_match = re.findall(r'\(([^()]+)\)$', left_drug)
+            right_comp_match = re.findall(r'\(([^()]+)\)$', right_drug)
+            if not left_comp_match or not right_comp_match:
+                print(f"[!] Không tìm được thông tin nhận dạng cho: {drug_pair}")
+                continue
+            left_comp = left_comp_match[0]
+            right_comp = right_comp_match[0]
+
+            # Lấy thông tin side effect theo drug_side_effect_info nếu có
+            left_drug_side_effect = drug_side_effect_info.get(left_comp, '')
+            right_drug_side_effect = drug_side_effect_info.get(right_comp, '')
+
+            # Tính Confidence_DDI: nếu score - (std/2) lớn hơn model_threshold thì Confidence_DDI = 1
+            if score - std / 2 > model_threshold:
+                Confidence_DDI = 1
+
+            # Lấy danh sách các thuốc tương đồng dựa trên DDI_type từ file known DDI
+            left_corresponding_drugs = left_ddi_info.get(DDI_type, [])
+            right_corresponding_drugs = right_ddi_info.get(DDI_type, [])
+
+            left_selected_drugs = []
+            right_selected_drugs = []
+
+            if left_drug in similarity_df.index and left_corresponding_drugs:
+                left_cols = similarity_df.columns.intersection(left_corresponding_drugs)
+                left_sim_df = similarity_df.loc[left_drug][left_cols]
+                left_selected_drugs = list(left_sim_df[left_sim_df >= structure_threshold].index)
+
+            if right_drug in similarity_df.index and right_corresponding_drugs:
+                right_cols = similarity_df.columns.intersection(right_corresponding_drugs)
+                right_sim_df = similarity_df.loc[right_drug][right_cols]
+                right_selected_drugs = list(right_sim_df[right_sim_df >= structure_threshold].index)
+
+            # Ghi một dòng vào file CSV
+            writer.writerow([
+                prescription, drug_pair, DDI_type, sentence,
+                score, std, Confidence_DDI,
+                left_drug_side_effect, right_drug_side_effect,
+                ';'.join(left_selected_drugs), ';'.join(right_selected_drugs),
+                left_drug, right_drug
+            ])
 
 
-def summarize_prediction_outcome(result_file: str, 
-                                 output_file: str, 
+def summarize_prediction_outcome(result_file: str,
+                                 output_file: str,
                                  information_file: str) -> None:
     """
     Tóm tắt kết quả dự đoán bằng cách thay thế mẫu câu với tên các thuốc.
-    
+
     Quy trình:
         - Đọc file thông tin sentence template dựa trên DDI_class từ file information_file.
-        - Đọc file kết quả dự đoán result_file (dạng TSV), bỏ qua header.
-        - Với mỗi dòng, lấy thông tin gồm: Prescription, Drug_pair, DDI_class, predicted_score, predicted_std.
-        - Tách thông tin trong Drug_pair để lấy tên các thuốc (drug1, drug2) và thay thế vào template sentence.
-        - Ghi kết quả ra output_file với các cột: Prescription, Drug_pair, DDI_class, Sentence (sau khi thay thế), Score, STD.
-    
+        - Đọc file kết quả dự đoán result_file (ở đây là final_output.csv, định dạng CSV với header).
+        - Với mỗi dòng, lấy thông tin gồm: Prescription, Drug_pair, Interaction_type, DDI_prob (Score), DDI_prob_std (STD).
+        - Tách thông tin trong Drug_pair để lấy tên các thuốc (drug1, drug2) và thay thế placeholder trong template sentence.
+        - Ghi kết quả ra output_file với định dạng CSV với các cột: Prescription, Drug_pair, DDI_type, Sentence (sau khi thay thế), Score, STD.
+
     Tham số:
-        result_file: Đường dẫn tới file kết quả dự đoán gốc.
-        output_file: Đường dẫn tới file sẽ ghi kết quả tóm tắt.
-        information_file: Đường dẫn tới file chứa thông tin sentence template (mỗi loại DDI có một mẫu câu).
+        result_file: Đường dẫn tới file kết quả dự đoán (ví dụ final_output.csv).
+        output_file: Đường dẫn tới file sẽ ghi kết quả tóm tắt (dạng CSV).
+        information_file: Đường dẫn tới file chứa thông tin sentence template.
     """
+    # Đọc thông tin mẫu câu (template)
     sentence_interaction_info = read_information_file(information_file)
-    
-    with open(result_file, 'r') as fp:
-        fp.readline()  # Bỏ qua header
-        out_fp = open(output_file, 'w')
-        out_fp.write('%s\t%s\t%s\t%s\t%s\t%s\n' %
-                     ('Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Score', 'STD'))
-        for line in fp:
-            line_split = line.strip().split('\t')
-            drug_pair_info = line_split[0].strip()
-            drug_pair_list = drug_pair_info.split('_')
-            prescription = drug_pair_list[0]
-            drug1 = drug_pair_list[1]
-            drug2 = drug_pair_list[2]
-            drug_pair = '%s_%s' % (drug1, drug2)
-            DDI_class = line_split[1].strip()
-            predicted_score = line_split[2].strip()
-            predicted_std = line_split[3].strip()
-        
-            template_sentence = sentence_interaction_info[DDI_class]
-            prediction_outcome = template_sentence.replace('#Drug1', drug1)
-            prediction_outcome = prediction_outcome.replace('#Drug2', drug2)
-            out_fp.write('%s\t%s\t%s\t%s\t%s\t%s\n' %
-                         (prescription, drug_pair, DDI_class, prediction_outcome, predicted_score, predicted_std))
-        out_fp.close()
+
+    with open(result_file, 'r', newline='') as fp:
+        # Sử dụng csv.DictReader cho file CSV đầu vào (phân cách bằng dấu phẩy)
+        reader = csv.DictReader(fp)
+        with open(output_file, 'w', newline='') as out_fp:
+            # Sử dụng csv.writer với delimiter mặc định là dấu phẩy
+            writer = csv.writer(out_fp)
+            # Ghi header vào file output
+            writer.writerow(['Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Score', 'STD'])
+
+            for row in reader:
+                # Lấy các trường cần thiết từ file kết quả
+                prescription = row.get('Prescription', '').strip()
+                drug_pair_raw = row.get('Drug_pair', '').strip()
+                # Sử dụng cột Interaction_type làm DDI_type (có thể là "Interaction_type" hoặc "DDI_type", tùy theo file)
+                DDI_type = row.get('Interaction_type', '').strip()
+                score = row.get('DDI_prob', '').strip()  # hoặc "Score" nếu tên cột là Score
+                std = row.get('DDI_prob_std', '').strip()  # hoặc "STD"
+
+                # Xử lý trường Drug_pair để tách ra tên các thuốc
+                # Ví dụ: "1_amoxicillin(amoxicillin)_metformin(metformin)"
+                # Bước 1: Loại bỏ tiền tố số nếu có.
+                match_prefix = re.match(r'\d+_(.+)', drug_pair_raw)
+                if match_prefix:
+                    rest = match_prefix.group(1)
+                else:
+                    rest = drug_pair_raw
+
+                # Bước 2: Dùng regex để tách thành 2 nhóm: left_drug và right_drug
+                match = re.match(r'(.+\([^()]+\))_(.+\([^()]+\))', rest)
+                if not match:
+                    print(f"[Warning] Định dạng Drug_pair không khớp: {drug_pair_raw}")
+                    continue
+                drug1_full, drug2_full = match.groups()
+
+                # Lấy tên thuốc là phần trước dấu "("
+                drug1 = drug1_full.split('(')[0].strip()
+                drug2 = drug2_full.split('(')[0].strip()
+                # Xây dựng lại Drug_pair chỉ bao gồm tên thuốc (nếu cần)
+                drug_pair = f"{drug1}_{drug2}"
+
+                # Lấy mẫu câu từ thông tin tương tác theo DDI_type
+                template_sentence = sentence_interaction_info.get(DDI_type, "")
+                # Thay thế placeholder #Drug1 và #Drug2 bằng tên thuốc
+                prediction_outcome = template_sentence.replace('#Drug1', drug1).replace('#Drug2', drug2)
+
+                # Ghi dòng kết quả ra file output (CSV)
+                writer.writerow([prescription, drug_pair, DDI_type, prediction_outcome, score, std])
 
 
-def processing_network(df: pd.DataFrame, 
+def processing_network(df: pd.DataFrame,
                        type_df: pd.DataFrame) -> pd.DataFrame:
     """
     Xử lý và gán thông tin hành động (action), người gây tác động (perpetrator) và nạn nhân (victim)
     cho các dòng có Interaction_type thuộc danh sách các loại PK (pharmacokinetic).
-    
+
     Tham số:
         df: DataFrame chứa thông tin DDI cần xử lý.
         type_df: DataFrame chứa thông tin mapping giữa type (loại tương tác) với
                  action và perpetrator (các cột bao gồm 'type', 'action', 'perpetrator').
-                                
+
     Trả về:
         pd.DataFrame: DataFrame được bổ sung thêm các cột 'action', 'perpetrator', 'victim' dựa trên mapping.
     """
-    PK_type_list = list(type_df['type'])    
+    PK_type_list = list(type_df['type'])
     type_to_action = {}
     type_to_perpetrator = {}
     for row in type_df.itertuples():
@@ -383,16 +416,15 @@ def processing_network(df: pd.DataFrame,
     PK_df['victim'] = victim_list
     return PK_df
 
-
 def _get_unidirectional_pred(tmp: Dict) -> Dict:
     """
-    Hàm tìm hướng dự đoán duy nhất dựa vào dictionary chứa các dự đoán conflict.
-    
+    Tìm hướng dự đoán duy nhất dựa vào dictionary chứa các dự đoán conflict.
+
     Tham số:
         tmp: Dictionary có cấu trúc {key: (direction, score)} với score là số thực.
-        
+
     Trả về:
-        dict: Nếu tìm thấy hướng duy nhất (direction) với score lớn nhất, trả về subset của tmp với 
+        dict: Nếu tìm thấy hướng duy nhất (direction) với score lớn nhất, trả về subset của tmp với
               các phần tử có cùng direction đó. Nếu không, trả về dictionary rỗng.
     """
     direction = None
@@ -411,19 +443,18 @@ def _get_unidirectional_pred(tmp: Dict) -> Dict:
     else:
         return {key: val for key, val in tmp.items() if val[0] == direction}
 
-
 def find_conflicts(df: pd.DataFrame) -> List[int]:
     """
     Tìm các cặp dự đoán xung đột trong DataFrame dựa trên thông tin drug pair và action.
-    
+
     Quy trình:
         - Xác định các dòng có drug pair (theo thứ tự) đã được báo cáo và ghi nhận thông tin dự đoán.
         - Nếu một drug pair được báo cáo với các giá trị dự đoán khác nhau (action khác nhau), lưu lại.
         - Sử dụng hàm _get_unidirectional_pred để lọc kết quả nếu có hướng dự đoán nhất định.
-    
+
     Tham số:
         df (pd.DataFrame): DataFrame chứa các dự đoán với các cột (bao gồm drug1, drug2, perpetrator, Severity, ...).
-        
+
     Trả về:
         list: Danh sách các chỉ số (index) của các dòng dự đoán được xác định là xung đột.
     """
@@ -435,9 +466,9 @@ def find_conflicts(df: pd.DataFrame) -> List[int]:
             reported_double[drug_pair_in_order] = (row[0], row[-2])
         elif row[-2] != reported_double[drug_pair_in_order][1]:
             reported_case += [row[0], reported_double[drug_pair_in_order][0]]
-            
+
     df = df.loc[reported_case]
-    
+
     severity_score_dict = {'Major': 5, 'Moderate': 4, 'Minor': 3, 'Not severe': 2, 'Unknown': 1}
     conflicting_pairs = {}
     for row in df.itertuples():
@@ -457,7 +488,6 @@ def find_conflicts(df: pd.DataFrame) -> List[int]:
                 idx_list.append(k)
     final = list(set(reported_case) - set(idx_list))
     return final
-
 
 def filter_final_result(annotated_result_file: str, 
                         conflicting_type_file: str, 

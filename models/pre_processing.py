@@ -43,7 +43,7 @@ def parse_food_input(input_file: str) -> None:
 
     assert all_drugs and all_foods, 'No valid drug-food pairs entered.'
 
-    with open('data/result/parsed_food_input.csv', 'w', newline='') as csvfile:
+    with open('data/Result/parsed_input.csv', 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Prescription', 'Drug name', 'Smiles'])
 
@@ -100,7 +100,7 @@ def parse_drug_input(input_file: str) -> None:
     current_drugs = [i.strip() for i in lines[0].strip().split('\t')]
     other_drugs = [i.strip() for i in lines[1].strip().split('\t')]
 
-    output_path = 'data/result/parsed_drug_input.csv'
+    output_path = 'data/Result/parsed_drug_input.csv'
     with open(output_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(['Prescription', 'Drug name', 'Smiles'])

@@ -1,0 +1,12 @@
+Drug pair,Predicted class,Score,STD
+0_ibuprofen(ibuprofen)_bivalirudin(bivalirudin),74,0.96181667,5.9604645e-08
+0_bivalirudin(bivalirudin)_ibuprofen(ibuprofen),80,0.9988061,5.9604645e-08
+1_ibuprofen(ibuprofen)_l-isoleucine(l-isoleucine),10,0.9274713,0.0
+2_aspirin(acetylsalicylic acid)_bivalirudin(bivalirudin),74,0.9989213,5.9604645e-08
+2_bivalirudin(bivalirudin)_aspirin(acetylsalicylic acid),80,0.9936282,0.0
+3_aspirin(acetylsalicylic acid)_l-isoleucine(l-isoleucine),10,0.9986169,0.0
+3_l-isoleucine(l-isoleucine)_aspirin(acetylsalicylic acid),74,0.46033654,0.0
+4_paracetamol(acetaminophen)_bivalirudin(bivalirudin),74,0.96166337,5.9604645e-08
+4_bivalirudin(bivalirudin)_paracetamol(acetaminophen),80,0.9986003,0.0
+5_paracetamol(acetaminophen)_l-isoleucine(l-isoleucine),10,0.8062736,0.0
+5_l-isoleucine(l-isoleucine)_paracetamol(acetaminophen),74,0.71010214,5.9604645e-08

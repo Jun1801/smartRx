@@ -1,0 +1,12 @@
+Prescription,Drug_pair,DDI_type,Sentence,Score,STD
+0,ibuprofen_bivalirudin,74,The therapeutic efficacy of bivalirudin can be decreased when used in combination with ibuprofen.,0.96181667,5.9604645e-08
+0,bivalirudin_ibuprofen,80,ibuprofen may increase the anticoagulant activities of bivalirudin.,0.9988061,5.9604645e-08
+1,ibuprofen_l-isoleucine,10,The therapeutic efficacy of ibuprofen can be increased when used in combination with l-isoleucine.,0.9274713,0.0
+2,aspirin_bivalirudin,74,The therapeutic efficacy of bivalirudin can be decreased when used in combination with aspirin.,0.9989213,5.9604645e-08
+2,bivalirudin_aspirin,80,aspirin may increase the anticoagulant activities of bivalirudin.,0.9936282,0.0
+3,aspirin_l-isoleucine,10,The therapeutic efficacy of aspirin can be increased when used in combination with l-isoleucine.,0.9986169,0.0
+3,l-isoleucine_aspirin,74,The therapeutic efficacy of aspirin can be decreased when used in combination with l-isoleucine.,0.46033654,0.0
+4,paracetamol_bivalirudin,74,The therapeutic efficacy of bivalirudin can be decreased when used in combination with paracetamol.,0.96166337,5.9604645e-08
+4,bivalirudin_paracetamol,80,paracetamol may increase the anticoagulant activities of bivalirudin.,0.9986003,0.0
+5,paracetamol_l-isoleucine,10,The therapeutic efficacy of paracetamol can be increased when used in combination with l-isoleucine.,0.8062736,0.0
+5,l-isoleucine_paracetamol,74,The therapeutic efficacy of paracetamol can be decreased when used in combination with l-isoleucine.,0.71010214,5.9604645e-08

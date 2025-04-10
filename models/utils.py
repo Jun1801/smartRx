@@ -24,7 +24,7 @@ def read_information_file(information_file: str) -> Dict:
     fp.readline()  # Bỏ qua header
     for line in fp:
         line_split = line.strip().split('\t')
-        interaction_type = line_split[0].strip()
+        interaction_type = line_split[0].strip()[1:]
         sentence = line_split[1].strip()
         interaction_info[interaction_type] = sentence
     fp.close()
@@ -171,27 +171,27 @@ def read_side_effect_info(df: pd.DataFrame,
         drug_side_effect_info[each_drug.lower()] = ';'.join(string_list)
 
     return drug_side_effect_info
+def DDI_result_supplement(input_file: str, output_file: str, interaction_info_file: str) -> None:
+    # Đọc dữ liệu từ hai file
+    predict_df = pd.read_csv(input_file)
+    interaction_df = pd.read_csv(interaction_info_file)
 
-# Đọc dữ liệu từ hai file
-predict_df = pd.read_csv("data/Result/output_predict_DDI.csv")
-interaction_df = pd.read_csv("data/Dataset/Interaction_information_cleaned.csv")
+    # Tạo các cột bổ sung
+    predict_df["Prescription"] = [int(row.split("_")[0]) for row in predict_df["Drug pair"]]
+    predict_df["Drug_pair"] = predict_df["Drug pair"]
+    predict_df["DDI_type"] = predict_df["Predicted class"]
 
-# Tạo các cột bổ sung
-predict_df["Prescription"] = [int(row.split("_")[0]) for row in predict_df["Drug pair"]]
-predict_df["Drug_pair"] = predict_df["Drug pair"]
-predict_df["DDI_type"] = predict_df["Predicted class"]
+    # Chuyển kiểu dữ liệu cho cột type để ánh xạ chính xác
+    interaction_df["type"] = interaction_df["type"].astype(int)
 
-# Chuyển kiểu dữ liệu cho cột type để ánh xạ chính xác
-interaction_df["type"] = interaction_df["type"].astype(int)
+    # Ánh xạ từ DDI_type sang câu mô tả tương ứng trong interaction_df
+    predict_df["Sentence"] = predict_df["DDI_type"].map(interaction_df.set_index("type")["sentence"])
 
-# Ánh xạ từ DDI_type sang câu mô tả tương ứng trong interaction_df
-predict_df["Sentence"] = predict_df["DDI_type"].map(interaction_df.set_index("type")["sentence"])
+    # Sắp xếp lại thứ tự cột theo yêu cầu
+    final_df = predict_df[["Prescription", "Drug_pair", "DDI_type", "Sentence", "Predicted class", "Score", "STD"]]
 
-# Sắp xếp lại thứ tự cột theo yêu cầu
-final_df = predict_df[["Prescription", "Drug_pair", "DDI_type", "Sentence", "Predicted class", "Score", "STD"]]
-
-# Lưu file kết quả
-final_df.to_csv("data/Result/output_predict_DDI_combined.csv", index=False)
+    # Lưu file kết quả
+    final_df.to_csv(output_file, index=False)
 
 
 def annotate_DDI_results(DDI_output_file: str,
@@ -321,7 +321,6 @@ def summarize_prediction_outcome(result_file: str,
     """
     # Đọc thông tin mẫu câu (template)
     sentence_interaction_info = read_information_file(information_file)
-
     with open(result_file, 'r', newline='') as fp:
         # Sử dụng csv.DictReader cho file CSV đầu vào (phân cách bằng dấu phẩy)
         reader = csv.DictReader(fp)
@@ -355,7 +354,6 @@ def summarize_prediction_outcome(result_file: str,
                     print(f"[Warning] Định dạng Drug_pair không khớp: {drug_pair_raw}")
                     continue
                 drug1_full, drug2_full = match.groups()
-
                 # Lấy tên thuốc là phần trước dấu "("
                 drug1 = drug1_full.split('(')[0].strip()
                 drug2 = drug2_full.split('(')[0].strip()
@@ -365,7 +363,7 @@ def summarize_prediction_outcome(result_file: str,
                 # Lấy mẫu câu từ thông tin tương tác theo DDI_type
                 template_sentence = sentence_interaction_info.get(DDI_type, "")
                 # Thay thế placeholder #Drug1 và #Drug2 bằng tên thuốc
-                prediction_outcome = template_sentence.replace('#Drug1', drug1).replace('#Drug2', drug2)
+                prediction_outcome = template_sentence.replace('#Drug1', drug1).replace('#Drug2', drug2)[:-5]
 
                 # Ghi dòng kết quả ra file output (CSV)
                 writer.writerow([prescription, drug_pair, DDI_type, prediction_outcome, score, std])
@@ -488,77 +486,24 @@ def find_conflicts(df: pd.DataFrame) -> List[int]:
                 idx_list.append(k)
     final = list(set(reported_case) - set(idx_list))
     return final
+def annotated_with_severity_result(input_file, output_file):
+    # Đọc file gốc
+    df = pd.read_csv(input_file)
+    # Hàm ánh xạ mức độ nghiêm trọng từ DDI_prob
+    def map_severity(prob):
+        if prob >= 0.9:
+            return "Major"
+        elif prob >= 0.7:
+            return "Moderate"
+        elif prob >= 0.5:
+            return "Minor"
+        elif prob >= 0.3:
+            return "Not severe"
+        else:
+            return "Unknown"
 
-def filter_final_result(annotated_result_file: str, 
-                        conflicting_type_file: str, 
-                        output_file: str) -> None:
-    """
-    Lọc kết quả cuối cùng từ file annotated_result_file dựa trên một số tiêu chí:
-        1. Confidence_DDI phải bằng 1.
-        2. Ít nhất một trong hai trường 'Similar approved drugs (left)' hoặc 'Similar approved drugs (right)' không rỗng.
-        3. Đối với các loại model2 không có hướng (đánh dấu bằng false_types), loại bỏ các trường trùng lặp.
-        4. Loại bỏ các drug pair có xung đột dựa trên thông tin từ conflicting_type_file.
-    
-    Tham số:
-        annotated_result_file: Đường dẫn tới file kết quả annotated ban đầu (dạng TSV).
-        conflicting_type_file: Đường dẫn tới file chứa thông tin các loại xung đột (dạng TSV).
-        output_file: Đường dẫn tới file sẽ ghi kết quả cuối cùng sau khi lọc.
-    """
-    df = pd.read_csv(annotated_result_file, sep='\t')
-    # Filter 1: Chỉ giữ các dòng có Confidence_DDI == 1 
-    df1 = df[df['Confidence_DDI'] == 1]
-    # Filter 2: Ít nhất một trường "Similar approved drugs" không rỗng
-    df1 = df1[(df1['Similar approved drugs (left)'].isna() == False) | (df1['Similar approved drugs (right)'].isna() == False)]
-    
-    # Chỉ giữ các cột cần thiết
-    df1 = df1[['drug1', 'drug2', 'Interaction_type', 'Sentence', 'Final severity', 'Side effects (left)', 'Side effects (right)']]
-    df1.rename(columns={'Final severity': 'Severity'}, inplace=True)
-    
-    # Filter 4: Loại bỏ duplicates cho các loại model2 không có hướng (#drug1-#drug2)
-    false_types = [117, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 143, 145, 146, 147,
-                   148, 151, 153, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170,
-                   171, 172, 173, 174, 179, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200]
-    
-    pairset_list = []
-    for row in df1.itertuples():
-        drug1 = getattr(row, 'drug1')
-        drug2 = getattr(row, 'drug2')
-        pairset = frozenset([drug1, drug2])
-        pairset_list.append(pairset)
-    df1['pairset'] = pairset_list
-    df_sub1 = df1[df1['Interaction_type'].isin(false_types)]
-    df_sub1.drop_duplicates(subset=['Interaction_type', 'pairset'], inplace=True)
-    df_sub2 = df1[~df1['Interaction_type'].isin(false_types)]
-    df1 = pd.concat([df_sub1, df_sub2], ignore_index=True)
-    
-    # Filter 5: Loại bỏ các drug pair có xung đột dựa trên file conflicting_type_file
-    conflicting_types = pd.read_csv(conflicting_type_file, sep='\t')
-    conc_type_df = conflicting_types[conflicting_types['category'] == 'concentration']
-    metab_type_df = conflicting_types[conflicting_types['category'] == 'metabolism']
-    Conc = processing_network(df1, conc_type_df)
-    metabolism = processing_network(df1, metab_type_df)
-    Conc_reported = find_conflicts(Conc)
-    met_reported = find_conflicts(metabolism)
-    conflicts_total = met_reported + Conc_reported
-    no_conflicts = list(set(df1.index) - set(conflicts_total))
-    df_final = df1.loc[no_conflicts]
-    df_final = df_final[['drug1', 'drug2', 'Interaction_type', 'Sentence', 'Severity', 'Side effects (left)', 'Side effects (right)']]
-    df_final.to_csv(output_file, sep='\t', index=False)
+    # Tạo cột 'Final severity'
+    df['Final severity'] = df['DDI_prob'].apply(map_severity)
 
-
-def concatenate_results(model1_result_file: str, 
-                        model2_result_file: str, 
-                        output_file: str) -> None:
-    """
-    Nối kết quả từ hai file dự đoán (model1 và model2) và ghi ra file kết quả cuối cùng.
-    
-    Tham số:
-        model1_result_file (str): Đường dẫn tới file kết quả của model1 (dạng TSV).
-        model2_result_file (str): Đường dẫn tới file kết quả của model2 (dạng TSV).
-        output_file (str): Đường dẫn tới file sẽ ghi kết quả nối sau khi loại bỏ duplicates.
-    """
-    df_model1 = pd.read_csv(model1_result_file, sep='\t')
-    df_model2 = pd.read_csv(model2_result_file, sep='\t')
-    df_concat = pd.concat([df_model1, df_model2], ignore_index=True)
-    df_concat = df_concat.drop_duplicates()
-    df_concat.to_csv(output_file, sep='\t', index=False)
+    # Lưu lại file mới
+    df.to_csv(output_file, index=False)

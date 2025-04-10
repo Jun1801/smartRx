@@ -1,0 +1,17 @@
+{
+    "Ibuprofen|ibuprofen": {
+        "drug_name": " Ibuprofen|ibuprofen",
+        "purpose": "Giảm đau (như đau đầu, đau răng, đau bụng kinh, đau cơ), hạ sốt, giảm viêm (trong viêm khớp).",
+        "general_usage": "Uống sau bữa ăn để giảm kích ứng dạ dày. Liều dùng tùy thuộc vào tình trạng bệnh và hướng dẫn của bác sĩ hoặc dược sĩ. Không dùng quá liều khuyến cáo."
+    },
+    "Aspirin|Acetylsalicylic acid": {
+        "drug_name": " Aspirin|Acetylsalicylic acid",
+        "purpose": "Giảm đau, hạ sốt, chống viêm, ngăn ngừa cục máu đông.",
+        "general_usage": "Uống sau bữa ăn với nhiều nước. Liều dùng tùy thuộc vào tình trạng bệnh và chỉ định của bác sĩ. Không dùng cho trẻ em dưới 16 tuổi trừ khi có chỉ định của bác sĩ."
+    },
+    "Paracetamol|Acetaminophen": {
+        "drug_name": " Paracetamol|Acetaminophen",
+        "purpose": "Hạ sốt, giảm đau (nhức đầu, đau cơ, đau răng, đau bụng kinh).",
+        "general_usage": "Uống trực tiếp. Người lớn: 325-650mg mỗi 4-6 giờ, không quá 4000mg/ngày. Trẻ em: Theo cân nặng hoặc độ tuổi (tham khảo tờ hướng dẫn sử dụng). Không dùng quá liều khuyến cáo."
+    }
+}

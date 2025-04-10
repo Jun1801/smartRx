@@ -1,9 +1,0 @@
-Drug pair,Predicted class,Score,STD
-0_paracetamol(paracetamol)_ibuprofen(ibuprofen),113,0.872722,0.08962
-0_ibuprofen(ibuprofen)_paracetamol(paracetamol),113,0.99868506,0.00095719023
-0_paracetamol(paracetamol)_aspirin(aspirin),113,0.36104527,0.23044795
-0_aspirin(aspirin)_paracetamol(paracetamol),113,0.9745115,0.033813134
-0_ibuprofen(ibuprofen)_aspirin(aspirin),113,0.9885155,0.014078199
-0_aspirin(aspirin)_ibuprofen(ibuprofen),113,0.93590724,0.057848267
-1_metformin(metformin)_amoxicillin(amoxicillin),3,0.29873985,0.30857602
-1_amoxicillin(amoxicillin)_metformin(metformin),113,0.7320444,0.21239866

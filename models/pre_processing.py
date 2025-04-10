@@ -27,8 +27,8 @@ def parse_food_input(input_file: str) -> None:
         input_file: Đường dẫn đến file chứa danh sách thuốc và thực phẩm, mỗi dòng phân tách bằng tab và dạng 'tên|mã'
     """
 
-    food_compound = pd.read_csv('data/dataset/food_compounds_lookup.csv')
-    drug_info = pd.read_csv('data/dataset/drug_info_combined.csv')
+    food_compound = pd.read_csv('data/Dataset/food_compounds_lookup.csv')
+    drug_info = pd.read_csv('data/Dataset/drug_info_combined.csv')
 
     all_drugs = []
     all_foods = []
@@ -91,7 +91,7 @@ def parse_drug_input(input_file: str) -> None:
         input_file: Đường dẫn tới file chứa 2 dòng, mỗi dòng là danh sách thuốc cách nhau bằng tab, theo định dạng 'tên|mã'.
     """
 
-    drug_info = pd.read_csv('data/dataset/drug_info_combined.csv')
+    drug_info = pd.read_csv('data/Dataset/drug_info_combined.csv')
     drug_info['Name_lower'] = drug_info['Name'].str.lower()
 
     with open(input_file, 'r') as f:

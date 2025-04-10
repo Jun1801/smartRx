@@ -25,7 +25,6 @@ BINARIZER_MODEL_PATH = "data/models/label_binarizer.pkl"
 THRESHOLD_MODEL = 0.27
 THRESHOLD_STRUCTURE = 0.7
 
-"""
 # PREPROCESSING
 parse_drug_input(input_file=COMBINED_DRUG_PATH)
 parse_DDI_input_file(input_file=PARSED_INPUT_PATH,
@@ -47,10 +46,6 @@ predict_DDI(output_file=OUTPUT_PREDICT_DDI_PATH,
             binarizer_file=BINARIZER_MODEL_PATH,
             threshold=THRESHOLD_MODEL)
 
-# predict_severity(output_file=OUTPUT_PREDICT_SEVERITY_PATH,
-#            pca_df=pca_df,
-#           binarizer_file=BINARIZER_MODEL_PATH,
-#         threshold=THRESHOLD_MODEL)
 
 DDI_result_supplement(input_file=OUTPUT_PREDICT_DDI_PATH,
                       interaction_info_file=INTERACTION_INFO_PATH,
@@ -63,7 +58,6 @@ annotate_DDI_results(DDI_output_file=OUTPUT_PREDICT_DDI_COMBINED_PATH,
                      side_effect_information_file=DRUG_SIDE_EFFECT_PATH,
                      model_threshold=THRESHOLD_MODEL,
                      structure_threshold=THRESHOLD_STRUCTURE)
-"""
 
 summarize_prediction_outcome(result_file=ANNOTATED_RESULT_PATH,
                              output_file=FINAL_OUTPUT_PATH,

@@ -1,0 +1,2 @@
+Aspirin|acetylsalicylic acid	Paracetamol|acetaminophen
+Milk|lactose	Orange|ascorbic acid

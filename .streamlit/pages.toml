@@ -1,0 +1,34 @@
+[[pages]]
+path = "smartrx_web/smartrx.py"
+name = "Welcome to SmartRx!!!"
+icon = "🏥"
+
+[[pages]]
+path = "smartrx_web/news.py"
+name = "Tin thức thường ngày"
+icon = "🌏"
+
+[[pages]]
+path = "smartrx_web/check_ddi.py"
+name = "Kiểm tra tương tác Thuốc - Thuốc"
+icon = "💊"
+
+[[pages]]
+path = "smartrx_web/check_dfi.py"
+name = "Kiểm tra tương tác Thuốc - Thực phẩm"
+icon = "🍲"
+
+[[pages]]
+path = "smartrx_web/drug_list.py"
+name = "Danh sách thuốc"
+icon = "📜"
+
+[[pages]]
+path = "smartrx_web/about.py"
+name = "Thông tin"
+icon = "ℹ️"
+
+[[pages]]
+path = "smartrx_web/contact.py"
+name = "Liên hệ"
+icon = "📧"

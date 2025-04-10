@@ -1,3 +1,5 @@
+import sys
+sys.setrecursionlimit(10000)
 from typing import Tuple, List, Any
 
 import csv
@@ -7,9 +9,10 @@ import copy
 import numpy as np
 import pandas as pd
 from tensorflow.keras.models import model_from_json
+# tensorflow==2.12
 
 
-def _load_model(trained_model_path: str, 
+def _load_model(trained_model_path: str,
                 trained_weight_path: str) -> Any:
     """
     Tải kiến trúc và trọng số của mô hình từ các file.
@@ -17,7 +20,7 @@ def _load_model(trained_model_path: str,
     Tham số:
         trained_model_path: Đường dẫn tới file JSON chứa kiến trúc mô hình.
         trained_weight_path: Đường dẫn tới file H5 chứa trọng số của mô hình.
-    
+
     Trả về:
         Mô hình Keras đã được tải.
     """
@@ -26,14 +29,15 @@ def _load_model(trained_model_path: str,
 
     model = model_from_json(loaded_model_json)
     model.load_weights(trained_weight_path)
+    model.summary()
     return model
 
 
-def _predict_with_mc(model: Any, 
-                     X: np.ndarray, 
+def _predict_with_mc(model: Any,
+                     X: np.ndarray,
                      iter_num: int = 10) -> Tuple[np.ndarray, np.ndarray]:
     """
-    Thực hiện dự đoán theo phương pháp Monte Carlo và trả về giá trị trung bình 
+    Thực hiện dự đoán theo phương pháp Monte Carlo và trả về giá trị trung bình
     và độ lệch chuẩn của các dự đoán.
 
     Tham số:
@@ -52,9 +56,8 @@ def _predict_with_mc(model: Any,
     std_predictions = np.std(predictions_array, axis=0)
     return mean_predictions, std_predictions
 
-
 def _write_prediction_results(output_file: str,
-                              ddi_pairs: List[str], 
+                              ddi_pairs: List[str],
                               predicted_results: List[List[int]],
                               original_predicted: np.ndarray,
                               original_std: np.ndarray) -> None:
@@ -126,7 +129,6 @@ def predict_DDI(output_file: str,
 
     _write_prediction_results(output_file, ddi_pairs, predicted_labels, original_predicted, original_std)
 
-
 def predict_severity(output_file: str,
                      pca_df: pd.DataFrame,
                      trained_model: str,
@@ -144,7 +146,7 @@ def predict_severity(output_file: str,
         trained_weight: Đường dẫn tới file H5 chứa trọng số của mô hình.
         binarizer_file: Đường dẫn tới file PKL chứa đối tượng label binarizer.
         threshold: Ngưỡng dùng để phân loại kết quả dự đoán.
-    
+
     Trả về:
         Không trả về; kết quả dự đoán được ghi vào file đầu ra.
     """

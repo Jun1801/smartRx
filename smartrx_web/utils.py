@@ -2,6 +2,7 @@ from typing import Tuple, Dict
 import streamlit as st
 import requests
 import tomllib 
+import json
 
 with open(".streamlit/api_config.toml", "rb") as f:
     config = tomllib.load(f)
@@ -20,9 +21,9 @@ def get_drug_info(drug_name: str) -> Tuple[str, Dict]:
     prompt = (
         f"Vui lòng cung cấp thông tin sơ lược ngắn gọn nhất có thể cho thuốc có tên '{drug_name}'(Nếu không tìm được thuốc tên như vậy thì tự động thay bằng tên thuốc gần giống nhất). "
         "Trả về 3 đoạn văn, mỗi đoạn đánh số như sau, không yêu cầu tiêu đề:"
-        "1. (Chỉ có tên thuốc)"
-        "2. (Mục đích sử dụng)"
-        "3. (Hướng dẫn sử dụng)"
+        "1. (Chỉ trả về cấu trúc 'drug name|chỉ English (generic) name không gồm drug name' )"
+        "2. (Mục đích sử dụng chỉ dùng tiếng Việt)"
+        "3. (Hướng dẫn sử dụng chỉ dùng tiếng Việt)"
         "Vui lòng đảm bảo các thông tin rõ ràng và chính xác. Chỉ chả về chính xác 3 đoạn văn, không trả về thêm bất cứ text ngoại lệ nào khác"
     )
     
@@ -119,3 +120,16 @@ def get_food_info(food_name: str) -> Tuple[str, Dict]:
     except Exception as e:
         st.error(f"Exception khi gọi API Gemini: {str(e)}")
         return {}
+
+
+def get_drug_input() -> None:
+    with open(json_drug_check_path,'r', encoding="utf-8") as f:
+        data = json.load(f)
+    drug_check_list = list(data.keys())
+    with open(json_drug_list_path, 'r', encoding="utf-8") as f:
+        data = json.load(f)
+    drug_list_list = list(data.keys())
+    with open("data/Dataset/Input_txt/combined_drug_lists.txt", "w") as f:
+        f.write("\t".join(drug_check_list) + "\n")
+        f.write("\t".join(drug_list_list) + "\n")
+

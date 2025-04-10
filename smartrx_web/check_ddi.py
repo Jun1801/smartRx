@@ -75,6 +75,9 @@ if drugs_data:
 else:
     st.info("Chưa có thông tin thuốc nào được thêm vào.")
 
+if st.button("check"):
+    get_drug_input()
+
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}

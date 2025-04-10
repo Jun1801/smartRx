@@ -8,29 +8,53 @@ import copy
 
 import numpy as np
 import pandas as pd
-from tensorflow.keras.models import model_from_json
-# tensorflow==2.12
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Dense, Activation, Dropout, BatchNormalization
+#tensorflow==2.19
 
+def _initialize_model():
+    # Xây dựng cấu trúc mô hình mới sử dụng Sequential.
+    model = Sequential(name="my_model")
 
-def _load_model(trained_model_path: str,
-                trained_weight_path: str) -> Any:
-    """
-    Tải kiến trúc và trọng số của mô hình từ các file.
+    # Lưu ý: Bạn cần xác định lại kích thước input (ở đây là 100, dựa theo thông tin có trong file .json cũ)
+    model.add(Input(shape=(100,), name="input_layer"))
 
-    Tham số:
-        trained_model_path: Đường dẫn tới file JSON chứa kiến trúc mô hình.
-        trained_weight_path: Đường dẫn tới file H5 chứa trọng số của mô hình.
+    # Lớp 1: Dense với 1024 đơn vị và linear activation, sau đó áp dụng Activation relu, Dropout và BatchNormalization
+    model.add(Dense(1024, activation="linear", name="dense_198"))
+    model.add(Activation("relu", name="activation_198"))
+    model.add(Dropout(0.3, name="dropout_164"))
+    model.add(BatchNormalization(name="batch_normalization_164"))
 
-    Trả về:
-        Mô hình Keras đã được tải.
-    """
-    with open(trained_model_path, "r") as json_file:
-        loaded_model_json = json_file.read()
+    # Lớp 2: Dense với 1024 đơn vị và linear activation, sau đó Activation relu, Dropout và BatchNormalization
+    model.add(Dense(1024, activation="linear", name="dense_199"))
+    model.add(Activation("relu", name="activation_199"))
+    model.add(Dropout(0.3, name="dropout_165"))
+    model.add(BatchNormalization(name="batch_normalization_165"))
 
-    model = model_from_json(loaded_model_json)
-    model.load_weights(trained_weight_path)
+    # Lớp 3: Dense với 1024 đơn vị và linear activation, sau đó Activation relu, Dropout và BatchNormalization
+    model.add(Dense(1024, activation="linear", name="dense_200"))
+    model.add(Activation("relu", name="activation_200"))
+    model.add(Dropout(0.3, name="dropout_166"))
+    model.add(BatchNormalization(name="batch_normalization_166"))
+
+    # Lớp 4: Dense với 1024 đơn vị và linear activation, sau đó Activation relu, Dropout và BatchNormalization
+    model.add(Dense(1024, activation="linear", name="dense_201"))
+    model.add(Activation("relu", name="activation_201"))
+    model.add(Dropout(0.3, name="dropout_167"))
+    model.add(BatchNormalization(name="batch_normalization_167"))
+
+    # Lớp cuối: Dense với 113 đơn vị và linear activation, sau đó Activation sigmoid
+    model.add(Dense(113, activation="linear", name="dense_202"))
+    model.add(Activation("sigmoid", name="activation_202"))
+
+    # Tóm tắt mô hình nếu cần
     model.summary()
+
+    # Sau khi đã xây dựng cấu trúc mới, nạp trọng số từ file .h5 (đảm bảo file "ddi_model.h5" nằm trong cùng thư mục)
+    model.load_weights("data/models/ddi_model.h5")
     return model
+
 
 
 def _predict_with_mc(model: Any,
@@ -90,8 +114,6 @@ def _write_prediction_results(output_file: str,
 
 def predict_DDI(output_file: str,
                 pca_df: pd.DataFrame,
-                trained_model: str,
-                trained_weight: str,
                 binarizer_file: str,
                 threshold: float) -> None:
     """
@@ -114,7 +136,7 @@ def predict_DDI(output_file: str,
     X = pca_df.values
 
     # Tải mô hình và trọng số
-    model = _load_model(trained_model, trained_weight)
+    model = _initialize_model()
 
     # Thực hiện dự đoán Monte Carlo
     mean_preds, std_preds = _predict_with_mc(model, X, iter_num=10)
@@ -129,63 +151,3 @@ def predict_DDI(output_file: str,
 
     _write_prediction_results(output_file, ddi_pairs, predicted_labels, original_predicted, original_std)
 
-def predict_severity(output_file: str,
-                     pca_df: pd.DataFrame,
-                     trained_model: str,
-                     trained_weight: str,
-                     binarizer_file: str,
-                     threshold: float) -> None:
-    """
-    Công dụng:
-        Dự đoán mức độ nghiêm trọng của tương tác thuốc và ghi kết quả vào file đầu ra.
-
-    Tham số:
-        output_file: Đường dẫn tới file đầu ra chứa kết quả dự đoán.
-        pca_df: DataFrame chứa đặc trưng đầu vào (index là cặp thuốc).
-        trained_model: Đường dẫn tới file JSON chứa kiến trúc mô hình đã huấn luyện.
-        trained_weight: Đường dẫn tới file H5 chứa trọng số của mô hình.
-        binarizer_file: Đường dẫn tới file PKL chứa đối tượng label binarizer.
-        threshold: Ngưỡng dùng để phân loại kết quả dự đoán.
-
-    Trả về:
-        Không trả về; kết quả dự đoán được ghi vào file đầu ra.
-    """
-    # Tải label binarizer
-    with open(binarizer_file, 'rb') as fid:
-        label_binarizer = pickle.load(fid)
-
-    ddi_pairs = list(pca_df.index)
-    X = pca_df.values
-
-    # Tải mô hình và trọng số
-    model = _load_model(trained_model, trained_weight)
-
-    # Thực hiện dự đoán Monte Carlo
-    mean_preds, std_preds = _predict_with_mc(model, X, iter_num=10)
-    original_predicted = copy.deepcopy(mean_preds)
-    original_std = copy.deepcopy(std_preds)
-
-    # Áp dụng ngưỡng để phân loại dự đoán
-    mean_preds = np.where(mean_preds >= threshold, 1, 0)
-    # Lấy các nhãn dự đoán ban đầu thông qua inverse transformation
-    predicted_labels = label_binarizer.inverse_transform(mean_preds)
-
-    _write_prediction_results(output_file, ddi_pairs, predicted_labels, original_predicted, original_std)
-
-
-if __name__ == "__main__":
-    # Ví dụ sử dụng: tạo một DataFrame mẫu với dữ liệu giả định
-    df = pd.DataFrame({
-        'feature1': [0.1, 0.2],
-        'feature2': [0.3, 0.4]
-    }, index=["DrugA-DrugB", "DrugC-DrugD"])
-
-    output_file_ddi = "ddi_predictions.csv"
-    output_file_severity = "severity_predictions.csv"
-    trained_model_file = "ddi_model.json"
-    trained_weight_file = "ddi_model.h5"
-    binarizer_file = "labels_binarizer.pkl"
-    threshold_value = 0.5
-
-    # predict_DDI(output_file_ddi, df, trained_model_file, trained_weight_file, binarizer_file, threshold_value)
-    # predict_severity(output_file_severity, df, trained_model_file, trained_weight_file, binarizer_file, threshold_value)

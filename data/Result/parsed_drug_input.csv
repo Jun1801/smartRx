@@ -1,13 +1,13 @@
 Prescription,Drug name,Smiles
-0,paracetamol(acetaminophen),CC(=O)NC1=CC=C(O)C=C1
-0,metformin(metformin),CN(C)C(=N)NC(N)=N
-1,paracetamol(acetaminophen),CC(=O)NC1=CC=C(O)C=C1
-1,atorvastatin(atorvastatin),CC(C)C1=C(C(=O)NC2=CC=CC=C2)C(=C(N1CC[C@@H](O)C[C@@H](O)CC(O)=O)C1=CC=C(F)C=C1)C1=CC=CC=C1
-2,paracetamol(acetaminophen),CC(=O)NC1=CC=C(O)C=C1
-2,simvastatin(simvastatin),[H][C@]12[C@H](C[C@@H](C)C=C1C=C[C@H](C)[C@@H]2CC[C@@H]1C[C@@H](O)CC(=O)O1)OC(=O)C(C)(C)CC
-3,ibuprofen(ibuprofen),CC(C)CC1=CC=C(C=C1)C(C)C(O)=O
-3,metformin(metformin),CN(C)C(=N)NC(N)=N
-4,ibuprofen(ibuprofen),CC(C)CC1=CC=C(C=C1)C(C)C(O)=O
-4,atorvastatin(atorvastatin),CC(C)C1=C(C(=O)NC2=CC=CC=C2)C(=C(N1CC[C@@H](O)C[C@@H](O)CC(O)=O)C1=CC=C(F)C=C1)C1=CC=CC=C1
-5,ibuprofen(ibuprofen),CC(C)CC1=CC=C(C=C1)C(C)C(O)=O
-5,simvastatin(simvastatin),[H][C@]12[C@H](C[C@@H](C)C=C1C=C[C@H](C)[C@@H]2CC[C@@H]1C[C@@H](O)CC(=O)O1)OC(=O)C(C)(C)CC
+0,ibuprofen(ibuprofen),CC(C)CC1=CC=C(C=C1)C(C)C(O)=O
+0,bivalirudin(bivalirudin),CC[C@H](C)[C@H](NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CC1=CC=CC=C1)NC(=O)[C@H](CC(O)=O)NC(=O)CNC(=O)[C@H](CC(N)=O)NC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)[C@@H]1CCCN1C(=O)[C@H](CCCNC(N)=N)NC(=O)[C@@H]1CCCN1C(=O)[C@H](N)CC1=CC=CC=C1)C(=O)N1CCC[C@H]1C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CC1=CC=C(O)C=C1)C(=O)N[C@@H](CC(C)C)C(O)=O
+1,ibuprofen(ibuprofen),CC(C)CC1=CC=C(C=C1)C(C)C(O)=O
+1,l-isoleucine(l-isoleucine),CC[C@H](C)[C@H](N)C(O)=O
+2,aspirin(acetylsalicylic acid),CC(=O)OC1=CC=CC=C1C(O)=O
+2,bivalirudin(bivalirudin),CC[C@H](C)[C@H](NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CC1=CC=CC=C1)NC(=O)[C@H](CC(O)=O)NC(=O)CNC(=O)[C@H](CC(N)=O)NC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)[C@@H]1CCCN1C(=O)[C@H](CCCNC(N)=N)NC(=O)[C@@H]1CCCN1C(=O)[C@H](N)CC1=CC=CC=C1)C(=O)N1CCC[C@H]1C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CC1=CC=C(O)C=C1)C(=O)N[C@@H](CC(C)C)C(O)=O
+3,aspirin(acetylsalicylic acid),CC(=O)OC1=CC=CC=C1C(O)=O
+3,l-isoleucine(l-isoleucine),CC[C@H](C)[C@H](N)C(O)=O
+4,paracetamol(acetaminophen),CC(=O)NC1=CC=C(O)C=C1
+4,bivalirudin(bivalirudin),CC[C@H](C)[C@H](NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CCC(O)=O)NC(=O)[C@H](CC1=CC=CC=C1)NC(=O)[C@H](CC(O)=O)NC(=O)CNC(=O)[C@H](CC(N)=O)NC(=O)CNC(=O)CNC(=O)CNC(=O)CNC(=O)[C@@H]1CCCN1C(=O)[C@H](CCCNC(N)=N)NC(=O)[C@@H]1CCCN1C(=O)[C@H](N)CC1=CC=CC=C1)C(=O)N1CCC[C@H]1C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CCC(O)=O)C(=O)N[C@@H](CC1=CC=C(O)C=C1)C(=O)N[C@@H](CC(C)C)C(O)=O
+5,paracetamol(acetaminophen),CC(=O)NC1=CC=C(O)C=C1
+5,l-isoleucine(l-isoleucine),CC[C@H](C)[C@H](N)C(O)=O

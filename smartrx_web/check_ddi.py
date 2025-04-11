@@ -3,7 +3,6 @@ import json
 import os
 
 from smartrx_web.utils import *
-from run_model import run_model
 
 if not os.path.exists(json_drug_check_path):
     with open(json_drug_check_path, "w", encoding="utf-8") as f:
@@ -39,7 +38,8 @@ with open(json_drug_list_path, "r", encoding="utf-8") as f:
 if drugs_data:
     for drug_name, info in drugs_data.items():
         check = "Chưa có trong danh sách thuốc"
-        if drug_name in drugs_list_data.keys():
+        drugs_list_lower = [data.lower() for data in drugs_list_data.keys()]
+        if drug_name.lower() in drugs_list_lower:
             check = "Đã có trong danh sách thuốc"
         with st.expander(drug_name):
             st.markdown(f"**Tên thuốc:** {info.get('drug_name', drug_name)}")
@@ -78,7 +78,7 @@ else:
 
 if st.button("Kiểm tra tương tác"):
     get_drug_input()
-    run_model()
+
     results = processing_result(input_file="data/Result/final_result.csv")
     for res in results:
         r = get_result_text(res)

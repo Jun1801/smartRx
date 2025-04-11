@@ -342,8 +342,7 @@ def summarize_prediction_outcome(result_file: str,
             # Sử dụng csv.writer với delimiter mặc định là dấu phẩy
             writer = csv.writer(out_fp)
             # Ghi header vào file output
-            writer.writerow(['Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Final severity' 'Score', 'STD', 'Side_effects (left)', 'Side_effects (right)'])
-
+            writer.writerow(['Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Final severity', 'Score', 'STD', 'Side_effects (left)', 'Side_effects (right)'])
             for row in reader:
                 # Lấy các trường cần thiết từ file kết quả
                 prescription = row.get('Prescription', '').strip()
@@ -359,7 +358,7 @@ def summarize_prediction_outcome(result_file: str,
                 except ValueError:
                     print(f"[Warning] Không thể chuyển đổi DDI_prob: {score}")
                     continue
-
+                
                 # Xử lý trường Drug_pair để tách ra tên các thuốc
                 # Ví dụ: "1_amoxicillin(amoxicillin)_metformin(metformin)"
                 # Bước 1: Loại bỏ tiền tố số nếu có.

@@ -19,7 +19,6 @@ DRUG_SIDE_EFFECT_PATH = "data/Dataset/Drug_Side_Effect.txt"
 ANNOTATED_RESULT_PATH = "data/Result/annotated_result.csv"
 ANNOTATED_SEVERITY_RESULT_PATH = "data/Result/annotated_severity_result.csv"
 FINAL_OUTPUT_PATH = "data/Result/final_result.csv"
-CONFLICT_PATH = "data/Dataset/conflicting_types.csv"
 FILTER_FINAL_RESULT_PATH = "data/Result/filter_result.csv"
 BINARIZER_MODEL_PATH = "data/Models/label_binarizer.pkl"
 THRESHOLD_MODEL = 0.27

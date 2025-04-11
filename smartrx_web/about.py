@@ -7,11 +7,14 @@ st.image("smartrx_web/images/smartrx.jpg")
 st.markdown("""
 ### 🛠️ Một số tiện ích hiện có
 - **Truy cập tin tức nhanh chóng, đấy đủ**
-- **Nhập danh sách thuốc hoặc đơn thuốc nhanh chóng**
+- **Nhập danh sách thuốc, thực phẩm hoặc đơn thuốc nhanh chóng**
 - **Giải thích dễ hiểu về các tương tác thuốc**
 - **Đánh giá rủi ro thông qua mô hình AI**
             
 ### 💻 Công nghệ
+SmartRx được xây dựng dựa trên bài nghiên cứu [JY Ryu et al., 2018](https://www.pnas.org/doi/10.1073/pnas.1803294115?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed) sau đó được cải tiến để phù hợp với bộ dữ liệu được cập nhật liên tục
+
+SmartRx sử dụng các công nghệ Google Cloud hiện đại để triển khai, mở rộng mô hình dễ dàng đồng thời lưu trữ dữ liệu người dùng bảo mật, linh hoạt
 
 ### 👨‍💻 Hướng dẫn sử dụng
 
@@ -22,6 +25,9 @@ st.markdown("""
 Phản hồi của bạn vô cùng quan trọng đối với chúng tôi! Bạn có thể trực tiếp phản hồi tại [đây](https://github.com/CryAndRRich/smartRx) hoặc gửi mail thông qua phần **Liên hệ**
 
 ### 👨‍🏫 Chân thành cảm ơn
+
+- Ban tổ chức GDGoC Hackathon Vietnam 2025 đã tạo sân chơi giúp chúng tôi tham gia và tạo nên ý tưởng này
+- Mentor [Chiem Tri Quang](https://vn.linkedin.com/in/ctquang89?trk=public_profile_browsemap_profile-result-card_result-card_full-click) đã giúp đỡ và hỗ trợ chúng tôi hoàn thiện ý tưởng
 """, unsafe_allow_html=True)
 
 hide_streamlit_style = """

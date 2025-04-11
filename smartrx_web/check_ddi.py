@@ -3,6 +3,7 @@ import json
 import os
 
 from smartrx_web.utils import *
+from run_model import run_model
 
 if not os.path.exists(json_drug_check_path):
     with open(json_drug_check_path, "w", encoding="utf-8") as f:
@@ -77,7 +78,7 @@ else:
 
 if st.button("Kiểm tra tương tác"):
     get_drug_input()
-
+    run_model()
     results = processing_result(input_file="data/Result/final_result.csv")
     for res in results:
         r = get_result_text(res)

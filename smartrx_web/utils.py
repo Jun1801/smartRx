@@ -140,11 +140,9 @@ def processing_result(input_file):
         reader = csv.DictReader(f)
         rows = list(reader)
     
-    num_pairs = len(rows) // 2
-    
-    for i in range(num_pairs):
-        row1 = rows[2 * i]
-        row2 = rows[2 * i + 1]
+    for i in range(0, len(rows) - 1, 2):
+        row1 = rows[i]
+        row2 = rows[i + 1]
         
         try:
             score1 = float(row1["Score"])
@@ -231,11 +229,8 @@ def get_result_text(result):
                 }
                 return result
             else:
-                st.error("API không trả về kết quả hợp lệ.")
                 return {}
         else:
-            st.error(f"Lỗi từ API: {response.status_code} - {response.text}")
             return {}
     except Exception as e:
-        st.error(f"Exception khi gọi API Gemini: {str(e)}")
         return {}

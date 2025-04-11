@@ -1,2 +1,2 @@
 Ibuprofen|ibuprofen	Aspirin|Acetylsalicylic acid	Paracetamol|Acetaminophen
-Bivalirudin|bivalirudin	L-Isoleucine|L-Isoleucine
+Bivalirudin|bivalirudin	L-Isoleucine|L-Isoleucine	Pyruvic acid|Pyruvic acid

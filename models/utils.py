@@ -300,6 +300,20 @@ def annotate_DDI_results(DDI_output_file: str,
                 left_drug, right_drug
             ])
 
+def map_severity(prob: float) -> str:
+    """
+    Ánh xạ giá trị xác suất thành mức độ nghiêm trọng.
+    """
+    if prob >= 0.9:
+        return "Major"
+    elif prob >= 0.7:
+        return "Moderate"
+    elif prob >= 0.5:
+        return "Minor"
+    elif prob >= 0.3:
+        return "Not severe"
+    else:
+        return "Unknown"
 
 def summarize_prediction_outcome(result_file: str,
                                  output_file: str,
@@ -328,7 +342,7 @@ def summarize_prediction_outcome(result_file: str,
             # Sử dụng csv.writer với delimiter mặc định là dấu phẩy
             writer = csv.writer(out_fp)
             # Ghi header vào file output
-            writer.writerow(['Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Score', 'STD'])
+            writer.writerow(['Prescription', 'Drug_pair', 'DDI_type', 'Sentence', 'Final severity' 'Score', 'STD', 'Side_effects (left)', 'Side_effects (right)'])
 
             for row in reader:
                 # Lấy các trường cần thiết từ file kết quả
@@ -336,8 +350,15 @@ def summarize_prediction_outcome(result_file: str,
                 drug_pair_raw = row.get('Drug_pair', '').strip()
                 # Sử dụng cột Interaction_type làm DDI_type (có thể là "Interaction_type" hoặc "DDI_type", tùy theo file)
                 DDI_type = row.get('Interaction_type', '').strip()
+                Side_effect_left = row.get('Side effects (left)', '').strip()
+                Side_effect_right = row.get('Side effects (right)', '').strip()
                 score = row.get('DDI_prob', '').strip()  # hoặc "Score" nếu tên cột là Score
                 std = row.get('DDI_prob_std', '').strip()  # hoặc "STD"
+                try:
+                    score_float = float(score)
+                except ValueError:
+                    print(f"[Warning] Không thể chuyển đổi DDI_prob: {score}")
+                    continue
 
                 # Xử lý trường Drug_pair để tách ra tên các thuốc
                 # Ví dụ: "1_amoxicillin(amoxicillin)_metformin(metformin)"
@@ -364,10 +385,10 @@ def summarize_prediction_outcome(result_file: str,
                 template_sentence = sentence_interaction_info.get(DDI_type, "")
                 # Thay thế placeholder #Drug1 và #Drug2 bằng tên thuốc
                 prediction_outcome = template_sentence.replace('#Drug1', drug1).replace('#Drug2', drug2)[:-5]
-
+                severity = map_severity(score_float)
+               
                 # Ghi dòng kết quả ra file output (CSV)
-                writer.writerow([prescription, drug_pair, DDI_type, prediction_outcome, score, std])
-
+                writer.writerow([prescription, drug_pair, DDI_type, prediction_outcome, severity, score, std, Side_effect_left, Side_effect_right])
 
 def processing_network(df: pd.DataFrame,
                        type_df: pd.DataFrame) -> pd.DataFrame:

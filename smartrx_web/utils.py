@@ -76,10 +76,10 @@ def get_food_info(food_name: str) -> Tuple[str, Dict]:
     }
     
     prompt = (
-        f"Vui lòng cung cấp thông tin sơ lược ngắn gọn nhất có thể cho loại thực phẩm có tên '{food_name}'(Nếu không tìm được thuốc tên như vậy thì tự động thay bằng tên thực phẩm gần giống nhất). "
+        f"Vui lòng cung cấp thông tin sơ lược ngắn gọn nhất có thể cho loại thực phẩm có tên '{food_name}'(Nếu không tìm được thuốc tên như vậy thì tự động thay bằng tên thực phẩm gần giống nhất, không cần thông báo gì cả). "
         "Trả về 2 đoạn văn, mỗi đoạn đánh số như sau, không yêu cầu tiêu đề:"
-        "1. (Chỉ có tên loại thực phẩm)"
-        "2. (Các chất có trong loại thực phẩm đó, yêu cầu có đủ tên chất)"
+        "1. (Chất chứa nhiều nhất bên trong thực phẩm với cấu trúc 'tên chất tiếng anh|English generic name của chất')"
+        "2. (Thông tin liên quan đến chất chứa nhiều nhất bên trong thực phẩm chỉ dùng Tiếng việt)"
         "Vui lòng đảm bảo các thông tin rõ ràng và chính xác. Chỉ chả về chính xác 2 đoạn văn, không trả về thêm bất cứ text ngoại lệ nào khác"
     )
     
@@ -216,10 +216,10 @@ def get_result_text(result):
                     return {}
                 
                 full_text = parts_list[0]["text"].strip()
-                if full_text == "Không":
-                    return {}
                 
                 parts = full_text.split("|")
+                if len(parts) < 5:
+                    return {}
                 result = {
                     "drugs": parts[0],
                     "score": parts[1],
@@ -229,8 +229,11 @@ def get_result_text(result):
                 }
                 return result
             else:
+                st.error("API không trả về kết quả hợp lệ.")
                 return {}
         else:
+            st.error(f"Lỗi từ API: {response.status_code} - {response.text}")
             return {}
     except Exception as e:
+        st.error(f"Exception khi gọi API Gemini: {str(e)}")
         return {}

@@ -19,52 +19,52 @@ DRUG_SIDE_EFFECT_PATH = "data/Dataset/Drug_Side_Effect.txt"
 ANNOTATED_RESULT_PATH = "data/Result/annotated_result.csv"
 ANNOTATED_SEVERITY_RESULT_PATH = "data/Result/annotated_severity_result.csv"
 FINAL_OUTPUT_PATH = "data/Result/final_result.csv"
-FILTER_FINAL_RESULT_PATH = "data/Result/filter_result.csv"
 BINARIZER_MODEL_PATH = "data/Models/label_binarizer.pkl"
 THRESHOLD_MODEL = 0.27
 THRESHOLD_STRUCTURE = 0.7
 
-# PREPROCESSING
-parse_drug_input(input_file=COMBINED_DRUG_PATH)
+def run_model():
+    # PREPROCESSING
+    parse_drug_input(input_file=COMBINED_DRUG_PATH)
 
-parse_DDI_input_file(input_file=PARSED_INPUT_PATH,
-                     output_file=OUTPUT_DDI_PATH)
+    parse_DDI_input_file(input_file=PARSED_INPUT_PATH,
+                        output_file=OUTPUT_DDI_PATH)
 
-calculate_structure_similarity(drug_dir=DRUG_DIR,
-                               input_file=OUTPUT_DDI_PATH,
-                               output_file=OUTPUT_SIMILARITY_PATH,
-                               drug_list_file=DRUG_LIST_PATH)
+    calculate_structure_similarity(drug_dir=DRUG_DIR,
+                                input_file=OUTPUT_DDI_PATH,
+                                output_file=OUTPUT_SIMILARITY_PATH,
+                                drug_list_file=DRUG_LIST_PATH)
 
-calculate_pca(similarity_profile_file=OUTPUT_SIMILARITY_PATH,
-              output_file=OUTPUT_PCA_PATH,
-              pca_model_path=PCA_MODEL_PATH)
+    calculate_pca(similarity_profile_file=OUTPUT_SIMILARITY_PATH,
+                output_file=OUTPUT_PCA_PATH,
+                pca_model_path=PCA_MODEL_PATH)
 
-pca_df = generate_input_profile(input_file=OUTPUT_DDI_PATH,
-                                pca_profile_file=OUTPUT_PCA_PATH)
+    pca_df = generate_input_profile(input_file=OUTPUT_DDI_PATH,
+                                    pca_profile_file=OUTPUT_PCA_PATH)
 
-# PREDICTION
-predict_DDI(output_file=OUTPUT_PREDICT_DDI_PATH,
-            pca_df=pca_df,
-            binarizer_file=BINARIZER_MODEL_PATH,
-            threshold=THRESHOLD_MODEL)
+    # PREDICTION
+    predict_DDI(output_file=OUTPUT_PREDICT_DDI_PATH,
+                pca_df=pca_df,
+                binarizer_file=BINARIZER_MODEL_PATH,
+                threshold=THRESHOLD_MODEL)
 
 
-DDI_result_supplement(input_file=OUTPUT_PREDICT_DDI_PATH,
-                      interaction_info_file=INTERACTION_INFO_PATH,
-                      output_file=OUTPUT_PREDICT_DDI_COMBINED_PATH)
+    DDI_result_supplement(input_file=OUTPUT_PREDICT_DDI_PATH,
+                        interaction_info_file=INTERACTION_INFO_PATH,
+                        output_file=OUTPUT_PREDICT_DDI_COMBINED_PATH)
 
-annotate_DDI_results(DDI_output_file=OUTPUT_PREDICT_DDI_COMBINED_PATH,
-                     similarity_file=DRUG_SIMILARITY_PATH,
-                     known_DDI_file=DRUG_BANK_KNOWN_DDI_PATH,
-                     output_file=ANNOTATED_RESULT_PATH,
-                     side_effect_information_file=DRUG_SIDE_EFFECT_PATH,
-                     model_threshold=THRESHOLD_MODEL,
-                     structure_threshold=THRESHOLD_STRUCTURE)
+    annotate_DDI_results(DDI_output_file=OUTPUT_PREDICT_DDI_COMBINED_PATH,
+                        similarity_file=DRUG_SIMILARITY_PATH,
+                        known_DDI_file=DRUG_BANK_KNOWN_DDI_PATH,
+                        output_file=ANNOTATED_RESULT_PATH,
+                        side_effect_information_file=DRUG_SIDE_EFFECT_PATH,
+                        model_threshold=THRESHOLD_MODEL,
+                        structure_threshold=THRESHOLD_STRUCTURE)
 
-summarize_prediction_outcome(result_file=ANNOTATED_RESULT_PATH,
-                             output_file=FINAL_OUTPUT_PATH,
-                             information_file=INTERACTION_INFO_MODEL_PATH)
+    summarize_prediction_outcome(result_file=ANNOTATED_RESULT_PATH,
+                                output_file=FINAL_OUTPUT_PATH,
+                                information_file=INTERACTION_INFO_MODEL_PATH)
 
-annotated_with_severity_result(input_file=ANNOTATED_RESULT_PATH,
-                               output_file=ANNOTATED_SEVERITY_RESULT_PATH)
+    annotated_with_severity_result(input_file=ANNOTATED_RESULT_PATH,
+                                output_file=ANNOTATED_SEVERITY_RESULT_PATH)
 

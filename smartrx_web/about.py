@@ -1,40 +1,46 @@
 import streamlit as st
 
-st.markdown("SmartRx là một ứng dụng AI (web) giúp kiểm tra tương tác thuốc - thuốc và thuốc - thực phẩm, giúp người dùng sử dụng hiệu quả, và đảm bảo sức khỏe được Team N3N chúng tôi đề xuất và phát triển trong khuôn khổ cuộc thi GDGOC Hackathon 2025")
+st.markdown(
+    "SmartRx is an AI-powered web application for checking drug–drug and drug–food interactions, "
+    "helping users optimize their medication regimens and safeguard their health. Developed by Team N3N "
+    "as part of the GDGOC Hackathon 2025."
+)
 
 st.image("smartrx_web/images/smartrx.jpg")
 
 st.markdown("""
-### 🛠️ Một số tiện ích hiện có
-- **Truy cập tin tức nhanh chóng, đấy đủ**
-- **Nhập danh sách thuốc, thực phẩm hoặc đơn thuốc nhanh chóng**
-- **Giải thích dễ hiểu về các tương tác thuốc**
-- **Đánh giá rủi ro thông qua mô hình AI**
-            
-### 💻 Công nghệ
-SmartRx được xây dựng dựa trên bài nghiên cứu [JY Ryu et al., 2018](https://www.pnas.org/doi/10.1073/pnas.1803294115?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed) sau đó được cải tiến để phù hợp với bộ dữ liệu được cập nhật liên tục
+### 🛠️ Key Features
+- **Instant access to comprehensive news**
+- **Quick entry of drug, food, or prescription lists**
+- **Clear explanations of identified interactions**
+- **Risk assessment powered by AI models**
 
-SmartRx sử dụng các công nghệ Google Cloud hiện đại để triển khai, mở rộng mô hình dễ dàng đồng thời lưu trữ dữ liệu người dùng bảo mật, linh hoạt
+### 💻 Technology Stack
+SmartRx builds upon the work of [JY Ryu et al., 2018](https://www.pnas.org/doi/10.1073/pnas.1803294115?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed) 
+and has been further enhanced to integrate continuously updated datasets.
 
-### 👨‍💻 Hướng dẫn sử dụng
+We leverage modern Google Cloud services for scalable model deployment and secure, flexible storage of user data.
 
-Để bắt đầu, bạn chỉ cần truy cập các phần khác nhau của giao diện người dùng bằng menu bên trái. Bạn có thể tra cứu tin tức liên quan, kiểm tra danh sách thuốc, kiểm tra tương tác giữa các loại thuốc hoặc thực phẩm với nhau
+### 👨‍💻 How to Use
+Navigate through the left-hand menu to access different modules. You can:
+- Browse the latest relevant news
+- Input lists of drugs, foods, or full prescriptions
+- Check interactions between any two items
+- Review clear, contextual interaction explanations
 
-### 📨 Phản hồi
+### 📨 Feedback
+Your feedback is invaluable! Share your thoughts on our [GitHub repository](https://github.com/CryAndRRich/smartRx) or send us an email via the **Contact** section.
 
-Phản hồi của bạn vô cùng quan trọng đối với chúng tôi! Bạn có thể trực tiếp phản hồi tại [đây](https://github.com/CryAndRRich/smartRx) hoặc gửi mail thông qua phần **Liên hệ**
-
-### 👨‍🏫 Chân thành cảm ơn
-
-- Ban tổ chức GDGoC Hackathon Vietnam 2025 đã tạo sân chơi giúp chúng tôi tham gia và tạo nên ý tưởng này
-- Mentor [Chiem Tri Quang](https://vn.linkedin.com/in/ctquang89?trk=public_profile_browsemap_profile-result-card_result-card_full-click) đã giúp đỡ và hỗ trợ chúng tôi hoàn thiện ý tưởng
+### 👨‍🏫 Acknowledgments
+- GDGOC Hackathon Vietnam 2025 organizers for hosting this event
+- Our mentor [Chiem Tri Quang](https://vn.linkedin.com/in/ctquang89?trk=public_profile_browsemap_profile-result-card_result-card_full-click) for guidance and support
 """, unsafe_allow_html=True)
 
+# Hide Streamlit's default menu and footer
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 </style>
 """
-
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)

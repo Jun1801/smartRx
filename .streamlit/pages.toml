@@ -5,30 +5,30 @@ icon = "🏥"
 
 [[pages]]
 path = "smartrx_web/news.py"
-name = "Tin thức thường ngày"
+name = "Daily News"
 icon = "🌏"
 
 [[pages]]
 path = "smartrx_web/check_ddi.py"
-name = "Kiểm tra tương tác Thuốc - Thuốc"
+name = "Drug-Drug Interaction Check"
 icon = "💊"
 
 [[pages]]
 path = "smartrx_web/check_dfi.py"
-name = "Kiểm tra tương tác Thuốc - Thực phẩm"
+name = "Drug-Food Interaction Check"
 icon = "🍲"
 
 [[pages]]
 path = "smartrx_web/drug_list.py"
-name = "Danh sách thuốc"
+name = "Drug List"
 icon = "📜"
 
 [[pages]]
 path = "smartrx_web/about.py"
-name = "Thông tin"
+name = "About"
 icon = "ℹ️"
 
 [[pages]]
 path = "smartrx_web/contact.py"
-name = "Liên hệ"
+name = "Contact"
 icon = "📧"

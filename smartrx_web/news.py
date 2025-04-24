@@ -1,15 +1,21 @@
 import requests
 import streamlit as st
-import tomllib 
+import tomllib
 
-st.markdown("Bạn có thể dễ dàng tìm kiếm, tra cứu thông tin liên quan đến các thuốc, thực phẩm mà bạn cần. Chỉ cần gõ từ khoá và để mọi việc của SmartRx lo!")
+st.markdown(
+    "Easily search and look up information on any medications or foods you need—"
+    "just enter a keyword and let SmartRx handle the rest!"
+)
 
+# Load API credentials from TOML config
 with open(".streamlit/api_config.toml", "rb") as f:
     config = tomllib.load(f)
 
 api_key = config["google"]["google_search_api"]
 cx = config["google"]["cx"]
-query = st.text_input("Nhập từ khóa tìm kiếm:", "tương tác thuốc thuốc")
+
+# Search input
+query = st.text_input("Enter search keyword:", "drug–drug interaction")
 
 if query:
     url = "https://www.googleapis.com/customsearch/v1"
@@ -28,9 +34,9 @@ if query:
             for item in results:
                 st.subheader(item.get("title"))
                 st.write(item.get("snippet"))
-                st.markdown(f"[Xem chi tiết]({item.get('link')})")
+                st.markdown(f"[Read more]({item.get('link')})")
                 st.markdown("---")
         else:
-            st.warning("Không có kết quả nào được tìm thấy.")
+            st.warning("No results found.")
     else:
-        st.error(f"Lỗi khi gọi API: {response.status_code} - {response.text}")
+        st.error(f"API request error: {response.status_code} - {response.text}")

@@ -1,6 +1,6 @@
 import streamlit as st
 
-st.warning("#### Nếu bạn muốn Báo cáo lỗi 👾 hoặc Đề xuất tính năng ⚡!")
+st.warning("#### If you’d like to report a bug 👾 or suggest a feature ⚡, please reach out below!")
 
 contact_form = """
 <form action="https://formsubmit.co/trannamhai.5d@gmail.com" method="POST" enctype="multipart/form-data">
@@ -16,11 +16,14 @@ contact_form = """
 """
 
 st.markdown(contact_form, unsafe_allow_html=True)
-
 st.markdown("---")
+st.markdown(
+    "#### ⭐ If you’re enjoying the website experience, please give us a star on "
+    "[GitHub](https://github.com/CryAndRRich/smartRx)!",
+    unsafe_allow_html=True
+)
 
-st.markdown("#### ⭐ Nếu bạn hài lòng với trải nghiệm trên website, xin hãy để lại một ngôi sao tại [đây](https://github.com/CryAndRRich/smartRx)", unsafe_allow_html=True)
-
+# Hide Streamlit’s default menu and footer
 hide_streamlit_style = """
 <style>
 #MainMenu {visibility: hidden;}
@@ -28,10 +31,11 @@ footer {visibility: hidden;}
 </style>
 """
 
-def local_css(file_name):
+def local_css(file_name: str):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
+# Load custom styles
 local_css("smartrx_web/style/style.css")
 
-st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)

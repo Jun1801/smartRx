@@ -1,239 +1,253 @@
 import csv
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Any, List
 import streamlit as st
 import requests
-import tomllib 
+import tomllib
 import json
+import os
 
+# Load API configuration
 with open(".streamlit/api_config.toml", "rb") as f:
     config = tomllib.load(f)
 
-api_key = config["google"]["google_gemini_api"]
-json_drug_list_path = "smartrx_web/json/drug_list_info.json"
-json_drug_check_path = "smartrx_web/json/drug_check_info.json"
-json_food_check_path = "smartrx_web/json/food_check_info.json"
+API_KEY = config["google"]["google_gemini_api"]
+JSON_DRUG_LIST_PATH = "smartrx_web/json/drug_list_info.json"
+JSON_DRUG_CHECK_PATH = "smartrx_web/json/drug_check_info.json"
+JSON_FOOD_CHECK_PATH = "smartrx_web/json/food_check_info.json"
 
-url_api = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-def get_drug_info(drug_name: str) -> Tuple[str, Dict]:
-    headers = {
-        "Content-Type": "application/json",
-    }
-    
+URL_API = (
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"gemini-2.0-flash:generateContent?key={API_KEY}"
+)
+
+def get_drug_info(drug_name: str) -> Tuple[str, Dict[str, Any]]:
+    """
+    Retrieve concise information about a medication using a language model API.
+
+    The function will prompt the model to return exactly three numbered paragraphs:
+      1. "drug name|English generic name"
+      2. "purpose of use"
+      3. "usage instructions"
+
+    If the exact drug name is not found, the model will choose the closest match.
+
+    Parameters:
+        drug_name: The name of the medication to look up.
+
+    Returns:
+        Tuple[str, Dict[str, Any]]: A tuple containing:
+            - actual_name: The standardized drug name returned by the model.
+            - info: A dictionary with keys:
+                'drug_name', 'purpose', and 'general_usage'.
+            If the API call fails, returns ({}, {}) and displays an error in Streamlit.
+    """
+    headers = {"Content-Type": "application/json"}
     prompt = (
-        f"Vui lòng cung cấp thông tin sơ lược ngắn gọn nhất có thể cho thuốc có tên '{drug_name}'(Nếu không tìm được thuốc tên như vậy thì tự động thay bằng tên thuốc gần giống nhất, không cần thông báo lại về thay đổi). "
-        "Trả về 3 đoạn văn, mỗi đoạn đánh số như sau, không yêu cầu tiêu đề:"
-        "1. (Chỉ trả về cấu trúc 'drug name|chỉ English (generic) name không gồm drug name')"
-        "2. (Mục đích sử dụng chỉ dùng tiếng Việt)"
-        "3. (Hướng dẫn sử dụng chỉ dùng tiếng Việt)"
-        "Vui lòng đảm bảo các thông tin rõ ràng và chính xác. Chỉ chả về chính xác 3 đoạn văn, không trả về thêm bất cứ text ngoại lệ nào khác ngoài 3 đoạn văn trên"
+        f"Please provide the most concise overview possible for the medication named '{drug_name}'. "
+        "If no exact match is found, automatically substitute the closest existing medication name without notification. "
+        "Return exactly three numbered paragraphs without titles: "
+        "1. (Format: 'drug name|English generic name only') "
+        "2. (Purpose of use, in Vietnamese) "
+        "3. (Usage instructions, in Vietnamese) "
+        "Ensure clarity and accuracy; return no other text."
     )
-    
-    payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }]
-    }
-    
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
     try:
-        response = requests.post(url_api, json=payload, headers=headers, timeout=10)
-        if response.status_code == 200:
-            res_json = response.json()
-            candidates = res_json["candidates"]
-            if candidates:
-                candidate = candidates[0]
-                parts_list = candidate["content"]["parts"]
-                if not parts_list:
-                    st.error("Phần 'parts' không có dữ liệu.")
-                    return {}
-                full_text = parts_list[0]["text"].strip()
-                
-                parts = full_text.split("2.")
-                drug_name_text = parts[0].strip()[2:]
-                
-                parts = parts[1].split("3.")
-                purpose = parts[0].strip()
-                general_usage = parts[1].strip() if len(parts) > 1 else ""
-                
-                result = {
-                    "drug_name": drug_name_text,
-                    "purpose": purpose,
-                    "general_usage": general_usage
-                }
-                return drug_name_text, result
-            else:
-                st.error("API không trả về kết quả hợp lệ.")
-                return {}
-        else:
-            st.error(f"Lỗi từ API: {response.status_code} - {response.text}")
-            return {}
+        response = requests.post(URL_API, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json().get("candidates", [])
+        if not data:
+            st.error("API returned no valid candidates.")
+            return "", {}
+        full_text = data[0]["content"]["parts"][0]["text"].strip()
+        # Parse three sections
+        try:
+            sec1, rest = full_text.split("2.", 1)
+            name_part = sec1.strip()[2:].strip()
+            sec2, sec3 = rest.split("3.", 1)
+            purpose = sec2.strip()
+            usage = sec3.strip()
+        except ValueError:
+            st.error("Unexpected format from API response.")
+            return "", {}
+        result = {"drug_name": name_part, "purpose": purpose, "general_usage": usage}
+        return name_part, result
     except Exception as e:
-        st.error(f"Exception khi gọi API Gemini: {str(e)}")
-        return {}
-    
-def get_food_info(food_name: str) -> Tuple[str, Dict]:
-    headers = {
-        "Content-Type": "application/json",
-    }
-    
+        st.error(f"Error calling Gemini API: {e}")
+        return "", {}
+
+
+def get_food_info(food_name: str) -> Tuple[str, Dict[str, Any]]:
+    """
+    Retrieve concise information about a food item using a language model API.
+
+    The function will prompt the model to return exactly two numbered paragraphs:
+      1. "major nutrient|English generic name of nutrient"
+      2. "information about that nutrient"
+
+    If no exact match is found, the model will choose the closest existing food name.
+
+    Parameters:
+        food_name: The name of the food item to look up.
+
+    Returns:
+        Tuple[str, Dict[str, Any]]: A tuple containing:
+            - actual_name: The standardized food name or nutrient label.
+            - info: A dictionary with keys 'food_name' and 'food_information'.
+            If the API call fails, returns ({}, {}) and displays an error in Streamlit.
+    """
+    headers = {"Content-Type": "application/json"}
     prompt = (
-        f"Vui lòng cung cấp thông tin sơ lược ngắn gọn nhất có thể cho loại thực phẩm có tên '{food_name}'(Nếu không tìm được thuốc tên như vậy thì tự động thay bằng tên thực phẩm gần giống nhất, không cần thông báo gì cả). "
-        "Trả về 2 đoạn văn, mỗi đoạn đánh số như sau, không yêu cầu tiêu đề:"
-        "1. (Chất chứa nhiều nhất bên trong thực phẩm với cấu trúc 'tên chất tiếng anh|English generic name của chất')"
-        "2. (Thông tin liên quan đến chất chứa nhiều nhất bên trong thực phẩm chỉ dùng Tiếng việt)"
-        "Vui lòng đảm bảo các thông tin rõ ràng và chính xác. Chỉ chả về chính xác 2 đoạn văn, không trả về thêm bất cứ text ngoại lệ nào khác"
+        f"Please provide the most concise overview possible for the food item '{food_name}'. "
+        "If no exact match is found, automatically substitute the closest food name without notification. "
+        "Return exactly two numbered paragraphs without titles: "
+        "1. (Format: 'nutrient name in English|English generic name of the nutrient') "
+        "2. (Information about that nutrient, in Vietnamese) "
+        "Ensure clarity and accuracy; return no other text."
     )
-    
-    payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }]
-    }
-    
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
+
     try:
-        response = requests.post(url_api, json=payload, headers=headers, timeout=10)
-        if response.status_code == 200:
-            res_json = response.json()
-            candidates = res_json["candidates"]
-            if candidates:
-                candidate = candidates[0]
-                parts_list = candidate["content"]["parts"]
-                if not parts_list:
-                    st.error("Phần 'parts' không có dữ liệu.")
-                    return {}
-                full_text = parts_list[0]["text"].strip()
-                
-                parts = full_text.split("2.")
-                drug_name_text = parts[0].strip()[2:]
-                
-                food_information = parts[1].strip() if len(parts) > 1 else ""
-                
-                result = {
-                    "drug_name": drug_name_text,
-                    "food_information": food_information
-                }
-                return drug_name_text, result
-            else:
-                st.error("API không trả về kết quả hợp lệ.")
-                return {}
-        else:
-            st.error(f"Lỗi từ API: {response.status_code} - {response.text}")
-            return {}
+        response = requests.post(URL_API, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json().get("candidates", [])
+        if not data:
+            st.error("API returned no valid candidates.")
+            return "", {}
+        full_text = data[0]["content"]["parts"][0]["text"].strip()
+        # Parse two sections
+        try:
+            part1, part2 = full_text.split("2.", 1)
+            name_part = part1.strip()[2:].strip()
+            info_text = part2.strip()
+        except ValueError:
+            st.error("Unexpected format from API response.")
+            return "", {}
+        result = {"food_name": name_part, "food_information": info_text}
+        return name_part, result
     except Exception as e:
-        st.error(f"Exception khi gọi API Gemini: {str(e)}")
-        return {}
-    
+        st.error(f"Error calling Gemini API: {e}")
+        return "", {}
+
+
 def get_drug_input() -> None:
-    with open(json_drug_check_path,'r', encoding="utf-8") as f:
-        data = json.load(f)
-    drug_check_list = list(data.keys())
-    with open(json_drug_list_path, 'r', encoding="utf-8") as f:
-        data = json.load(f)
-    drug_list_list = list(data.keys())
-    with open("data/Dataset/Input_txt/combined_drug_lists.txt", "w") as f:
-        f.write("\t".join(drug_check_list) + "\n")
-        f.write("\t".join(drug_list_list) + "\n")
+    """
+    Write combined drug lists to a text file for downstream DDI processing.
 
-def processing_result(input_file):
+    Reads two JSON files:
+      - One for drugs to check interactions.
+      - One for the user's saved drug list.
+    Then writes both lists as two tab-separated lines to
+    'data/Dataset/Input_txt/combined_drug_lists.txt'.
+    """
+    with open(JSON_DRUG_CHECK_PATH, 'r', encoding='utf-8') as f:
+        check_list = list(json.load(f).keys())
+    with open(JSON_DRUG_LIST_PATH, 'r', encoding='utf-8') as f:
+        saved_list = list(json.load(f).keys())
+    os.makedirs(os.path.dirname("data/Dataset/Input_txt/combined_drug_lists.txt"), exist_ok=True)
+    with open("data/Dataset/Input_txt/combined_drug_lists.txt", "w", encoding='utf-8') as f:
+        f.write("\t".join(check_list) + "\n")
+        f.write("\t".join(saved_list) + "\n")
+
+
+def processing_result(input_file: str) -> List[List[str]]:
+    """
+    Process the DDI result CSV and select the stronger prediction per drug pair.
+
+    Reads a CSV with alternating rows for each drug pair prediction,
+    compares the 'Score' field, and retains the row with the higher score.
+
+    Returns a list of records, each containing:
+      [drug1, drug2, sentence, formatted_score, combined_side_effects]
+
+    Parameters:
+        input_file: Path to the DDI result CSV file.
+
+    Returns:
+        List[List[str]]: Processed results for display.
+    """
     results = []
-    
     with open(input_file, 'r', encoding='utf-8') as f:
         reader = csv.DictReader(f)
         rows = list(reader)
-    
-    for i in range(0, len(rows) - 1, 2):
-        row1 = rows[i]
-        row2 = rows[i + 1]
-        
-        try:
-            score1 = float(row1["Score"])
-        except ValueError:
-            score1 = 0.0
-        try:
-            score2 = float(row2["Score"])
-        except ValueError:
-            score2 = 0.0
-        
-        if score1 >= score2:
-            selected = row1
-        else:
-            selected = row2
 
-        drug_pair = selected["Drug_pair"]
-        drugs = drug_pair.split("_")
-        if len(drugs) != 2:
-            drugs = [drug_pair, ""]
-
-        sentence = selected["Sentence"]
-
-        score_val = float(selected["Score"])
-        score_str = f"{score_val:.4f}"
-
-        side_effect1 = selected.get("Side_effects (left)", "")
-        side_effect2 = selected.get("Side_effects (right)", "")
-        side_effect = f"{side_effect1} {side_effect2}".strip()
-
-        result_item = drugs + [sentence, score_str, side_effect]
-
-        results.append(result_item)
-    
+    for i in range(0, len(rows), 2):
+        if i+1 >= len(rows):
+            break
+        row1, row2 = rows[i], rows[i+1]
+        score1 = float(row1.get("Score", 0.0) or 0.0)
+        score2 = float(row2.get("Score", 0.0) or 0.0)
+        selected = row1 if score1 >= score2 else row2
+        pair = selected.get("Drug_pair", "_")
+        drugs = pair.split("_") if "_" in pair else [pair, ""]
+        sentence = selected.get("Sentence", "")
+        score_str = f"{float(selected.get('Score',0)):.4f}"
+        se_left = selected.get("Side_effects (left)", "")
+        se_right = selected.get("Side_effects (right)", "")
+        combined_se = se_left + ("; " + se_right if se_right else "")
+        results.append([drugs[0], drugs[1], sentence, score_str, combined_se])
     return results
 
-def get_result_text(result):
+
+def get_result_text(result: List[str]) -> Dict[str, str]:
+    """
+    Enrich a DDI result with additional explanation via language model.
+
+    Sends a prompt including the drug names, original interaction sentence,
+    and score, then expects exactly four '|'-delimited sections:
+      1. "Drug1 <-> Drug2|score"
+      2. Translation of the interaction into Vietnamese.
+      3. Detailed explanation in Vietnamese (avoid jargon).
+      4. List of at least five side effects in Vietnamese, comma-separated.
+
+    Parameters:
+        result: A record from processing_result: [drug1, drug2, sentence, score, side_effects]
+
+    Returns:
+        Dict[str, str]: Mapping with keys 'drugs','score','sentence1','sentence2','side_effect',
+                        or empty dict on error.
+    """
     drug1, drug2, sentence, score, _ = result
-    drug1 = drug1.capitalize()
-    drug2 = drug2.capitalize()
-    headers = {
-        "Content-Type": "application/json",
-    }
-    
+    drug1_cap = drug1.capitalize()
+    drug2_cap = drug2.capitalize()
+    headers = {"Content-Type": "application/json"}
     prompt = (
-        f"Vui lòng cung cấp thông tin sơ lược ngắn gọn về tương tác hai loại thuốc {drug1} và {drug2} biết rằng đã có nội dung tương tác là {sentence}, chỉ cần bổ sung và làm rõ nội dung của tương tác. "
-        "Nội dung là tương tác bất lợi thì trả về 4 đoạn văn được ngăn cách bởi 1 dấu gạch dọc ('|') trong đó nội dung từng đoạn như sau:"
-        f"Đoạn 1: Chỉ có cấu trúc '{drug1} <-> {drug2}|{score}'"
-        "Đoạn 2: Dịch nội dung tương tác đã cho ban đầu thành tiếng việt"
-        "Đoạn 3: Bổ sung, giải thích nội dung cụ thể tương tác của đoạn 2, viết bằng tiếng việt và tránh dùng thuật ngữ"
-        f"Đoạn 4: Liệt kê các tác dụng phụ (ít nhất 5 và không cần đánh số) tách bởi dấu phẩy và trả về bằng tiếng việt"
-        "Vui lòng đảm bảo các thông tin rõ ràng và chính xác. Chỉ chả về chính xác 4 đoạn văn liền nhau chỉ cách bởi '|', không trả về thêm bất cứ text ngoại lệ nào khác ngoài 4 đoạn văn trên. Lưu ý các đoạn văn là 1 hoặc nhiều câu viết liền nhau, không xuống dòng"
+        f"Please provide a concise overview of the adverse interaction between {drug1_cap} and {drug2_cap}. "
+        f"Original interaction: {sentence}. Expand and clarify the content. "
+        "Return exactly four '|' separated sections with no line breaks: "
+        f"1. '{drug1_cap} <-> {drug2_cap}|{score}' "
+        "2. Translate the initial interaction into Vietnamese. "
+        "3. Provide a detailed Vietnamese explanation without technical jargon. "
+        "4. List at least five side effects in Vietnamese, separated by commas. "
+        "Ensure clarity and accuracy; return no other text."
     )
-    
-    payload = {
-        "contents": [{
-            "parts": [{"text": prompt}]
-        }]
-    }
-    
+    payload = {"contents": [{"parts": [{"text": prompt}]}]}
     try:
-        response = requests.post(url_api, json=payload, headers=headers, timeout=10)
-        if response.status_code == 200:
-            res_json = response.json()
-        
-            candidates = res_json["candidates"]
-            if candidates:
-                candidate = candidates[0]
-                parts_list = candidate["content"]["parts"]
-                if not parts_list:
-                    st.error("Phần 'parts' không có dữ liệu.")
-                    return {}
-                
-                full_text = parts_list[0]["text"].strip()
-                
-                parts = full_text.split("|")
-                if len(parts) < 5:
-                    return {}
-                result = {
-                    "drugs": parts[0],
-                    "score": parts[1],
-                    "sentence1": parts[2],
-                    "sentence2": parts[3],
-                    "side_effect": parts[4]
-                }
-                return result
-            else:
-                st.error("API không trả về kết quả hợp lệ.")
-                return {}
-        else:
-            st.error(f"Lỗi từ API: {response.status_code} - {response.text}")
+        response = requests.post(URL_API, json=payload, headers=headers, timeout=10)
+        response.raise_for_status()
+        candidates = response.json().get("candidates", [])
+        if not candidates:
+            st.error("API returned no valid candidates.")
             return {}
+        full_text = candidates[0]["content"]["parts"][0]["text"].strip()
+        parts = full_text.split("|")
+        if len(parts) < 4:
+            return {}
+        return {
+            "drugs": parts[0],
+            "score": parts[1],
+            "sentence1": parts[2],
+            "sentence2": parts[3],
+            "side_effect": parts[4] if len(parts) > 4 else ""
+        }
     except Exception as e:
-        st.error(f"Exception khi gọi API Gemini: {str(e)}")
+        st.error(f"Error calling Gemini API: {e}")
         return {}
+
+# Ensure JSON files exist on startup
+for path in [JSON_DRUG_LIST_PATH, JSON_DRUG_CHECK_PATH, JSON_FOOD_CHECK_PATH]:
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    if not os.path.exists(path):
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump({}, f, ensure_ascii=False, indent=4)
